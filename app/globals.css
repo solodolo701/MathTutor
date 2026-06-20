@@ -1,35 +1,84 @@
 @import "tailwindcss";
 @import "katex/dist/katex.min.css";
 
+/* ── Design tokens ────────────────────────────────────────────────── */
 :root {
-  --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 240 10% 3.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 3.9%;
-  --primary: 240 5.9% 10%;
-  --primary-foreground: 0 0% 98%;
-  --secondary: 240 4.8% 95.9%;
-  --secondary-foreground: 240 5.9% 10%;
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
-  --accent: 240 4.8% 95.9%;
-  --accent-foreground: 240 5.9% 10%;
-  --destructive: 0 72.2% 50.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 5.9% 90%;
-  --input: 240 5.9% 90%;
-  --ring: 240 5.9% 10%;
-  --radius: 0.5rem;
-  --chart-1: 12 76% 61%;
-  --chart-2: 173 58% 39%;
-  --chart-3: 197 37% 24%;
-  --chart-4: 43 74% 66%;
-  --chart-5: 27 87% 67%;
-}
+  /* Surfaces */
+  --color-bg-base:       #0a0a0f;
+  --color-bg-elevated:   #12121a;
+  --color-bg-card:       #16161f;
+  --color-bg-input:      #1c1c28;
+  --color-bg-hover:      #202030;
 
-.dark {
+  /* Borders */
+  --color-border-subtle: #1e1e2e;
+  --color-border-base:   #262638;
+  --color-border-strong: #35355a;
+
+  /* Text */
+  --color-text-primary:  #f0f0ff;
+  --color-text-secondary:#a0a0c0;
+  --color-text-muted:    #5a5a80;
+  --color-text-disabled: #3a3a55;
+
+  /* Brand / Learning */
+  --color-brand-500:     #6366f1;
+  --color-brand-400:     #818cf8;
+  --color-brand-600:     #4f46e5;
+  --color-brand-950:     #1e1b4b;
+  --color-brand-border:  #3730a3;
+
+  /* Mastery / Gold */
+  --color-mastery-500:   #f59e0b;
+  --color-mastery-400:   #fbbf24;
+  --color-mastery-950:   #1c1200;
+  --color-mastery-border:#78350f;
+
+  /* Streak / Fire */
+  --color-streak-500:    #f97316;
+  --color-streak-400:    #fb923c;
+  --color-streak-950:    #1c0a00;
+  --color-streak-border: #7c2d12;
+
+  /* XP / Energy */
+  --color-xp-500:        #eab308;
+  --color-xp-400:        #facc15;
+
+  /* Success */
+  --color-success-500:   #22c55e;
+  --color-success-400:   #4ade80;
+  --color-success-950:   #001a09;
+  --color-success-border:#14532d;
+
+  /* Danger */
+  --color-danger-500:    #ef4444;
+  --color-danger-400:    #f87171;
+  --color-danger-950:    #1a0000;
+  --color-danger-border: #7f1d1d;
+
+  /* Hint / Amber */
+  --color-hint-500:      #f59e0b;
+  --color-hint-400:      #fbbf24;
+  --color-hint-950:      #1a0f00;
+  --color-hint-border:   #78350f;
+
+  /* Shield / Blue */
+  --color-shield-400:    #60a5fa;
+  --color-shield-950:    #0a1628;
+
+  /* Radius */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+
+  /* Shadows */
+  --shadow-card:   0 1px 3px rgba(0,0,0,.6), 0 1px 2px rgba(0,0,0,.4);
+  --shadow-glow-brand:   0 0 20px rgba(99,102,241,.35);
+  --shadow-glow-mastery: 0 0 20px rgba(245,158,11,.35);
+  --shadow-glow-streak:  0 0 20px rgba(249,115,22,.35);
+
+  /* shadcn compat */
   --background: 240 10% 3.9%;
   --foreground: 0 0% 98%;
   --card: 240 10% 3.9%;
@@ -49,6 +98,7 @@
   --border: 240 3.7% 15.9%;
   --input: 240 3.7% 15.9%;
   --ring: 240 4.9% 83.9%;
+  --radius: 0.5rem;
   --chart-1: 220 70% 50%;
   --chart-2: 160 60% 45%;
   --chart-3: 30 80% 55%;
@@ -57,14 +107,51 @@
 }
 
 @theme inline {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--color-bg-base);
+  --color-foreground: var(--color-text-primary);
+  --font-sans: var(--font-jakarta), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), monospace;
 }
 
+/* ── Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
 body {
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+code, kbd, pre {
+  font-family: var(--font-jetbrains), monospace;
+}
+
+/* ── Focus visible ────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-brand-400);
+  outline-offset: 2px;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-bg-base); }
+::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+
+/* ── Reduced motion ───────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Utility: glow variants ───────────────────────────────────────── */
+.glow-brand   { box-shadow: var(--shadow-glow-brand); }
+.glow-mastery { box-shadow: var(--shadow-glow-mastery); }
+.glow-streak  { box-shadow: var(--shadow-glow-streak); }
