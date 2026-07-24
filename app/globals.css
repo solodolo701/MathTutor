@@ -1,70 +1,93 @@
 @import "tailwindcss";
 @import "katex/dist/katex.min.css";
 
-/* ── Design tokens ────────────────────────────────────────────────── */
+/* ── Design tokens — light theme ─────────────────────────────────── */
 :root {
-  /* Surfaces */
-  --color-bg-base:       #0a0a0f;
-  --color-bg-elevated:   #12121a;
-  --color-bg-card:       #16161f;
-  --color-bg-input:      #1c1c28;
-  --color-bg-hover:      #202030;
+  /* Core palette */
+  --color-primary:        #5B4FE0;
+  --color-primary-dark:   #4238B8;
+  --color-ink:            #221F36;
+  --color-muted:          #6B6785;
+  --color-faint:          #A6A2BF;
+  --color-disabled:       #C9C6DA;
+  --color-border:         #E4E1F1;
+  --color-surface:        #F5F4FB;
+  --color-surface-2:      #EFEDFA;
+  --color-surface-3:      #E9E6FB;
+  --color-surface-4:      #ECEBF4;
+  --color-white:          #FFFFFF;
 
-  /* Borders */
-  --color-border-subtle: #1e1e2e;
-  --color-border-base:   #262638;
-  --color-border-strong: #35355a;
-
-  /* Text */
-  --color-text-primary:  #f0f0ff;
-  --color-text-secondary:#a0a0c0;
-  --color-text-muted:    #5a5a80;
-  --color-text-disabled: #3a3a55;
-
-  /* Brand / Learning */
-  --color-brand-500:     #6366f1;
-  --color-brand-400:     #818cf8;
-  --color-brand-600:     #4f46e5;
-  --color-brand-950:     #1e1b4b;
-  --color-brand-border:  #3730a3;
-
-  /* Mastery / Gold */
-  --color-mastery-500:   #f59e0b;
-  --color-mastery-400:   #fbbf24;
-  --color-mastery-950:   #1c1200;
-  --color-mastery-border:#78350f;
-
-  /* Streak / Fire */
-  --color-streak-500:    #f97316;
-  --color-streak-400:    #fb923c;
-  --color-streak-950:    #1c0a00;
-  --color-streak-border: #7c2d12;
-
-  /* XP / Energy */
-  --color-xp-500:        #eab308;
-  --color-xp-400:        #facc15;
+  /* Amber / Mastery / Streak */
+  --color-amber:          #E8A33D;
+  --color-amber-dark:     #D98324;
+  --color-amber-darker:   #B4761F;
+  --color-amber-tint:     #FBEBD3;
+  --color-amber-tint-2:   #FBE9D6;
 
   /* Success */
-  --color-success-500:   #22c55e;
-  --color-success-400:   #4ade80;
-  --color-success-950:   #001a09;
-  --color-success-border:#14532d;
+  --color-success:        #2FA36B;
+  --color-success-tint:   #E4F5EC;
 
   /* Danger */
-  --color-danger-500:    #ef4444;
-  --color-danger-400:    #f87171;
-  --color-danger-950:    #1a0000;
-  --color-danger-border: #7f1d1d;
+  --color-danger:         #D84C4C;
+  --color-danger-tint:    #FDE8E8;
 
-  /* Hint / Amber */
-  --color-hint-500:      #f59e0b;
-  --color-hint-400:      #fbbf24;
-  --color-hint-950:      #1a0f00;
-  --color-hint-border:   #78350f;
+  /* Connector lines */
+  --color-connector:      #9C8FF0;
+  --color-locked-conn:    #D9D6E8;
 
-  /* Shield / Blue */
-  --color-shield-400:    #60a5fa;
-  --color-shield-950:    #0a1628;
+  /* ── Legacy aliases (keep existing components working) ── */
+  --color-bg-base:        #F5F4FB;
+  --color-bg-elevated:    #FFFFFF;
+  --color-bg-card:        #FFFFFF;
+  --color-bg-input:       #FFFFFF;
+  --color-bg-hover:       #E9E6FB;
+
+  --color-border-subtle:  #E4E1F1;
+  --color-border-base:    #E4E1F1;
+  --color-border-strong:  #C9C6DA;
+
+  --color-text-primary:   #221F36;
+  --color-text-secondary: #6B6785;
+  --color-text-muted:     #A6A2BF;
+  --color-text-disabled:  #C9C6DA;
+
+  --color-brand-500:      #5B4FE0;
+  --color-brand-400:      #7B6FEF;
+  --color-brand-600:      #4238B8;
+  --color-brand-950:      #E9E6FB;
+  --color-brand-border:   #EFEDFA;
+
+  --color-mastery-500:    #E8A33D;
+  --color-mastery-400:    #E8A33D;
+  --color-mastery-950:    #FBEBD3;
+  --color-mastery-border: #D98324;
+
+  --color-streak-500:     #D98324;
+  --color-streak-400:     #E8A33D;
+  --color-streak-950:     #FBEBD3;
+  --color-streak-border:  #B4761F;
+
+  --color-xp-500:         #E8A33D;
+  --color-xp-400:         #E8A33D;
+
+  --color-success-500:    #2FA36B;
+  --color-success-400:    #2FA36B;
+  --color-success-950:    #E4F5EC;
+  --color-success-border: #2FA36B;
+
+  --color-danger-500:     #D84C4C;
+  --color-danger-400:     #EF6666;
+  --color-danger-950:     #FDE8E8;
+  --color-danger-border:  #B02020;
+
+  --color-hint-500:       #E8A33D;
+  --color-hint-400:       #D98324;
+  --color-hint-950:       #FBE9D6;
+  --color-hint-border:    #D98324;
+
+  --color-shield-400:     #5B4FE0;
+  --color-shield-950:     #E9E6FB;
 
   /* Radius */
   --radius-sm:  6px;
@@ -73,42 +96,17 @@
   --radius-xl:  20px;
 
   /* Shadows */
-  --shadow-card:   0 1px 3px rgba(0,0,0,.6), 0 1px 2px rgba(0,0,0,.4);
-  --shadow-glow-brand:   0 0 20px rgba(99,102,241,.35);
-  --shadow-glow-mastery: 0 0 20px rgba(245,158,11,.35);
-  --shadow-glow-streak:  0 0 20px rgba(249,115,22,.35);
-
-  /* shadcn compat */
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 240 5.9% 10%;
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --accent: 240 3.7% 15.9%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --ring: 240 4.9% 83.9%;
-  --radius: 0.5rem;
-  --chart-1: 220 70% 50%;
-  --chart-2: 160 60% 45%;
-  --chart-3: 30 80% 55%;
-  --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%;
+  --shadow-card:          0 1px 3px rgba(34,31,54,.06), 0 1px 2px rgba(34,31,54,.04);
+  --shadow-mastered:      0 6px 16px rgba(232,163,61,.4);
+  --shadow-glow-brand:    0 0 20px rgba(91,79,224,.2);
+  --shadow-glow-mastery:  0 0 20px rgba(232,163,61,.35);
+  --shadow-glow-streak:   0 0 20px rgba(217,131,36,.3);
 }
 
+/* ── Tailwind theme bridge ────────────────────────────────────────── */
 @theme inline {
-  --color-background: var(--color-bg-base);
-  --color-foreground: var(--color-text-primary);
+  --color-background: var(--color-surface);
+  --color-foreground: var(--color-ink);
   --font-sans: var(--font-jakarta), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), monospace;
 }
@@ -119,11 +117,12 @@
 html { scroll-behavior: smooth; }
 
 body {
-  background: var(--color-bg-base);
-  color: var(--color-text-primary);
+  background: var(--color-surface);
+  color: var(--color-ink);
   font-family: var(--font-jakarta), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  margin: 0;
 }
 
 code, kbd, pre {
@@ -132,15 +131,15 @@ code, kbd, pre {
 
 /* ── Focus visible ────────────────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid var(--color-brand-400);
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
 /* ── Scrollbar ────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--color-bg-base); }
-::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-faint); }
 
 /* ── Reduced motion ───────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
@@ -151,7 +150,45 @@ code, kbd, pre {
   }
 }
 
-/* ── Utility: glow variants ───────────────────────────────────────── */
+/* ── Glow utilities ───────────────────────────────────────────────── */
 .glow-brand   { box-shadow: var(--shadow-glow-brand); }
 .glow-mastery { box-shadow: var(--shadow-glow-mastery); }
 .glow-streak  { box-shadow: var(--shadow-glow-streak); }
+
+/* ── Flame flicker animation ──────────────────────────────────────── */
+@keyframes flameFlicker {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50%       { transform: scale(1.08) rotate(-2deg); }
+}
+
+.flame-flicker {
+  animation: flameFlicker 1.8s ease-in-out infinite;
+}
+
+/* ── Connector pulse animation ────────────────────────────────────── */
+@keyframes connectorPulse {
+  0%, 100% { opacity: 0.35; }
+  50%       { opacity: 1; }
+}
+
+.connector-pulse {
+  animation: connectorPulse 2.2s ease-in-out infinite;
+}
+
+/* ── XP float animation ───────────────────────────────────────────── */
+@keyframes xpFloat {
+  0%   { opacity: 0; transform: translateY(0) scale(.8); }
+  15%  { opacity: 1; transform: translateY(-4px) scale(1); }
+  100% { opacity: 0; transform: translateY(-54px) scale(1); }
+}
+
+/* ── Feedback pop animation ───────────────────────────────────────── */
+@keyframes feedbackPop {
+  0%   { transform: scale(.9); opacity: 0; }
+  60%  { transform: scale(1.03); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.feedback-pop {
+  animation: feedbackPop 0.4s ease-out forwards;
+}

@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronRight, CheckCircle, AlertCircle, Lightbulb } from "lucide-react";
 import type { Problem, Skill } from "@/types/supabase";
 import { ProblemDisplay } from "@/components/math/ProblemDisplay";
 import { submitAnswer, updateStreak } from "@/app/actions/session";
@@ -21,23 +20,44 @@ const FREE_DAILY_LIMIT = 5;
 type Phase = "warmup" | "practice" | "review";
 
 function getPhase(index: number, total: number): Phase {
-  if (index < 3) return "warmup";
-  if (index >= total - 3) return "review";
+  if (index < 2) return "warmup";
+  if (index >= total - 1) return "review";
   return "practice";
 }
 
-const phaseLabels: Record<Phase, { label: string; color: string }> = {
-  warmup:   { label: "Bemelegítés", color: "var(--color-xp-400)" },
-  practice: { label: "Gyakorlás",   color: "var(--color-brand-400)" },
-  review:   { label: "Ismétlés",    color: "var(--color-mastery-400)" },
+const PHASE_META: Record<Phase, { label: string; color: string }> = {
+  warmup:   { label: "Bemelegítés", color: "#D98324" },
+  practice: { label: "Gyakorlás",   color: "var(--color-primary)" },
+  review:   { label: "Ismétlés",    color: "var(--color-amber)" },
 };
+
+const CORRECT_PHRASES = [
+  "Szuper! Pontosan így kell.",
+  "Remek munka!",
+  "Magabiztosan haladsz!",
+  "Ügyes vagy — ez az!",
+];
+
+let phraseIndex = 0;
+function nextPhrase() {
+  return CORRECT_PHRASES[phraseIndex++ % CORRECT_PHRASES.length];
+}
+
+interface XpPopup {
+  id: number;
+  xp: number;
+}
+
+let popupId = 0;
 
 export default function PracticeSession({ skill, problems, userId, isPremium, problemsToday }: Props) {
   const router = useRouter();
+  const cardRef = useRef<HTMLDivElement>(null);
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [completed, setCompleted] = useState(false);
   const [answeredThisSession, setAnsweredThisSession] = useState(0);
-  const [totalXp, setTotalXp] = useState(0);
+  const [sessionXp, setSessionXp] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
   const [feedback, setFeedback] = useState<{
     correct: boolean;
@@ -45,28 +65,37 @@ export default function PracticeSession({ skill, problems, userId, isPremium, pr
     newPKnow: number;
     mastered: boolean;
   } | null>(null);
-  const [hintLevel, setHintLevel] = useState(0);
-  const [showSolution, setShowSolution] = useState(false);
-  const [startTime, setStartTime] = useState(Date.now());
-  const [xpAnimation, setXpAnimation] = useState<number | null>(null);
+  const [hintsShown, setHintsShown] = useState(0);
+  const [wrongAttempts, setWrongAttempts] = useState(0);
+  const [xpPopups, setXpPopups] = useState<XpPopup[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [limitReached, setLimitReached] = useState(!isPremium && problemsToday >= FREE_DAILY_LIMIT);
   const [streakResult, setStreakResult] = useState<{ current: number; newShield: boolean } | null>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [networkError, setNetworkError] = useState(false);
+  const [startTime, setStartTime] = useState(Date.now());
+  const [correctPhrase, setCorrectPhrase] = useState("");
 
   const currentProblem = problems[currentIndex];
   const phase = getPhase(currentIndex, problems.length);
-  const progressPct = ((currentIndex + 1) / problems.length) * 100;
-  const isNearLimit = !isPremium && (answeredThisSession + problemsToday >= FREE_DAILY_LIMIT - 1);
+  const phaseInfo = PHASE_META[phase];
+  const hints = (currentProblem?.hints as Array<{ level: number; text_hu: string }> | null) ?? [];
+  const isNearLimit = !isPremium && answeredThisSession + problemsToday >= FREE_DAILY_LIMIT - 1;
+  const isLastProblem = currentIndex >= problems.length - 1;
 
   useEffect(() => {
     setStartTime(Date.now());
-    setHintLevel(0);
-    setShowSolution(false);
+    setHintsShown(0);
+    setWrongAttempts(0);
     setFeedback(null);
     setNetworkError(false);
   }, [currentIndex]);
+
+  const spawnXpPopup = useCallback((xp: number) => {
+    const id = ++popupId;
+    setXpPopups((p) => [...p, { id, xp }]);
+    setTimeout(() => setXpPopups((p) => p.filter((x) => x.id !== id)), 1400);
+  }, []);
 
   const handleAnswer = useCallback(
     async (answer: string) => {
@@ -87,12 +116,12 @@ export default function PracticeSession({ skill, problems, userId, isPremium, pr
 
         if (result.correct) {
           setCorrectCount((n) => n + 1);
-          setTotalXp((xp) => xp + result.xpEarned);
-          setXpAnimation(result.xpEarned);
-          setTimeout(() => setXpAnimation(null), 1500);
+          setSessionXp((xp) => xp + result.xpEarned);
+          setCorrectPhrase(nextPhrase());
+          spawnXpPopup(result.xpEarned);
         } else {
-          const hints = (currentProblem.hints as Array<{ level: number; text_hu: string }> | null) ?? [];
-          setHintLevel((h) => Math.min(h + 1, hints.length));
+          setWrongAttempts((n) => n + 1);
+          setHintsShown((h) => Math.min(h + 1, hints.length));
         }
       } catch {
         setNetworkError(true);
@@ -100,50 +129,76 @@ export default function PracticeSession({ skill, problems, userId, isPremium, pr
         setIsSubmitting(false);
       }
     },
-    [currentProblem, isSubmitting, feedback, isPremium, answeredThisSession, problemsToday, startTime]
+    [currentProblem, isSubmitting, feedback, isPremium, answeredThisSession, problemsToday, startTime, hints.length, spawnXpPopup]
   );
 
   const handleNext = useCallback(async () => {
-    if (currentIndex >= problems.length - 1) {
+    if (isLastProblem) {
       const sr = await updateStreak(userId);
       setStreakResult(sr);
       setCompleted(true);
     } else {
       setCurrentIndex((i) => i + 1);
     }
-  }, [currentIndex, problems.length, userId]);
+  }, [isLastProblem, userId]);
 
-  /* ─── Limit wall ─────────────────────────────────────────────── */
+  const requestHint = useCallback(() => {
+    setHintsShown((h) => Math.min(h + 1, hints.length));
+  }, [hints.length]);
+
+  /* ── Limit wall ─────────────────────────────────────────────────── */
   if (limitReached) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-lg mx-auto text-center py-16"
+        style={{ maxWidth: 460, margin: "0 auto", textAlign: "center", paddingTop: 64 }}
       >
         <div
-          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
-          style={{ background: "var(--color-brand-950)", border: "1.5px solid var(--color-brand-border)" }}
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: 20,
+            background: "var(--color-surface-3)",
+            border: "1px solid var(--color-border)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 24px",
+          }}
         >
-          <AlertCircle size={28} style={{ color: "var(--color-brand-400)" }} />
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 8v4" />
+            <path d="M12 16h.01" />
+          </svg>
         </div>
-        <h2 className="text-xl font-bold mb-3" style={{ color: "var(--color-text-primary)" }}>
+        <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--color-ink)", marginBottom: 12 }}>
           Napi korlát elérve
         </h2>
-        <p className="mb-8" style={{ color: "var(--color-text-secondary)" }}>
+        <p style={{ fontSize: 14, color: "var(--color-muted)", marginBottom: 32 }}>
           Ma már {FREE_DAILY_LIMIT} feladatot oldottál meg. Válts prémiumra a korlátlan hozzáférésért!
         </p>
         <button
           onClick={() => router.push("/app/pricing")}
-          className="px-6 py-3 rounded-xl font-semibold transition-colors mb-4 block mx-auto"
-          style={{ background: "var(--color-brand-500)", color: "white" }}
+          style={{
+            display: "block",
+            margin: "0 auto 16px",
+            padding: "14px 28px",
+            borderRadius: 12,
+            fontWeight: 700,
+            fontSize: 15,
+            background: "var(--color-primary)",
+            color: "#fff",
+            border: "none",
+            cursor: "pointer",
+          }}
         >
           Prémium aktiválása — 3,99 EUR/hó
         </button>
         <button
           onClick={() => router.push("/app/dashboard")}
-          className="text-sm transition-colors"
-          style={{ color: "var(--color-text-muted)" }}
+          style={{ fontSize: 14, color: "var(--color-muted)", background: "none", border: "none", cursor: "pointer" }}
         >
           Vissza az irányítópulthoz
         </button>
@@ -151,180 +206,249 @@ export default function PracticeSession({ skill, problems, userId, isPremium, pr
     );
   }
 
-  /* ─── Session complete ────────────────────────────────────────── */
+  /* ── Session complete ────────────────────────────────────────────── */
   if (completed) {
+    const streakNew = (streakResult?.current ?? 0) + 1;
     return (
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-lg mx-auto text-center py-12"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: "spring", stiffness: 260, damping: 22 }}
+        style={{
+          maxWidth: 460,
+          margin: "0 auto",
+          background: "#fff",
+          border: "1px solid var(--color-border)",
+          borderRadius: 24,
+          padding: 40,
+          textAlign: "center",
+        }}
       >
-        <div className="text-6xl mb-6">🎉</div>
-        <h2 className="text-2xl font-bold mb-2" style={{ color: "var(--color-text-primary)" }}>
-          Feladatsor kész!
-        </h2>
+        <div
+          style={{
+            fontSize: 14,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: ".04em",
+            color: "var(--color-faint)",
+            marginBottom: 8,
+          }}
+        >
+          Munka elvégezve
+        </div>
 
-        {streakResult && streakResult.current > 0 && (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 380, damping: 22 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold mb-4 border"
+        <div
+          style={{
+            fontSize: 44,
+            fontWeight: 800,
+            color: "var(--color-amber)",
+            margin: "14px 0",
+          }}
+        >
+          +{sessionXp} XP
+        </div>
+
+        {/* Streak line */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            fontWeight: 700,
+            color: "var(--color-amber-dark)",
+            marginBottom: 24,
+          }}
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="flame-flicker"
+          >
+            <path d="M12 3c1 3-3 4-3 8a3 3 0 0 0 6 0c0-2-1-3-1-4 2 1 3 3 3 5a5 5 0 0 1-10 0c0-4 3-6 5-9z" />
+          </svg>
+          {streakNew} napos sorozat aktív
+          {streakResult?.newShield && (
+            <span style={{ color: "var(--color-primary)", marginLeft: 4 }}>· Új sorozatvédő!</span>
+          )}
+        </div>
+
+        {/* Skill improved rows */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+            maxWidth: 420,
+            margin: "0 auto 28px",
+          }}
+        >
+          <div
             style={{
-              background: "var(--color-streak-950)",
-              borderColor: "var(--color-streak-border)",
-              color: "var(--color-streak-400)",
+              background: "var(--color-surface)",
+              borderRadius: 12,
+              padding: "12px 16px",
+              textAlign: "left",
             }}
           >
-            🔥 {streakResult.current} napos sorozat!
-            {streakResult.newShield && (
-              <span style={{ color: "var(--color-shield-400)" }} className="ml-1">
-                🛡️ Új sorozatvédő!
-              </span>
-            )}
-          </motion.div>
-        )}
-
-        <div className="grid grid-cols-3 gap-4 mb-8 mt-6">
-          {[
-            { icon: "⚡", label: "Szerzett XP", value: totalXp, color: "var(--color-xp-400)" },
-            { icon: "✓", label: "Helyes", value: `${correctCount}/${problems.length}`, color: "var(--color-success-400)" },
-            { icon: "📚", label: "Képesség", value: skill.name_hu, color: "var(--color-brand-400)" },
-          ].map((s) => (
             <div
-              key={s.label}
-              className="rounded-xl p-4 border"
-              style={{ background: "var(--color-bg-card)", borderColor: "var(--color-border-base)" }}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: 13,
+                fontWeight: 700,
+                marginBottom: 6,
+              }}
             >
-              <div className="text-2xl mb-1">{s.icon}</div>
-              <div className="text-xl font-bold" style={{ color: s.color }}>{s.value}</div>
-              <div className="text-xs mt-1" style={{ color: "var(--color-text-muted)" }}>{s.label}</div>
+              <span style={{ color: "var(--color-ink)" }}>{skill.name_hu}</span>
+              <span style={{ color: "var(--color-success)" }}>
+                {Math.round(Math.max(0, problems.length - correctCount) * 5)}% → {Math.round(correctCount / Math.max(1, problems.length) * 100)}%
+              </span>
             </div>
-          ))}
+            <div style={{ height: 6, background: "var(--color-border)", borderRadius: 4, overflow: "hidden" }}>
+              <div
+                style={{
+                  height: "100%",
+                  width: `${Math.round(correctCount / Math.max(1, problems.length) * 100)}%`,
+                  background: "var(--color-success)",
+                  borderRadius: 4,
+                }}
+              />
+            </div>
+          </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <button
-            onClick={() => router.push("/app/skills")}
-            className="px-6 py-3 rounded-xl font-medium transition-colors"
-            style={{ background: "var(--color-brand-500)", color: "white" }}
-          >
-            Holnap folytatom →
-          </button>
-          <button
-            onClick={() => router.push("/app/dashboard")}
-            className="px-6 py-3 rounded-xl font-medium border transition-colors"
-            style={{
-              background: "var(--color-bg-card)",
-              borderColor: "var(--color-border-base)",
-              color: "var(--color-text-secondary)",
-            }}
-          >
-            Irányítópult
-          </button>
-        </div>
+        <button
+          onClick={() => router.push("/app/dashboard")}
+          style={{
+            padding: "14px 28px",
+            borderRadius: 12,
+            fontWeight: 700,
+            fontSize: 15,
+            background: "var(--color-primary)",
+            color: "#fff",
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
+          Vissza az irányítópulthoz
+        </button>
       </motion.div>
     );
   }
 
   if (!currentProblem) {
     return (
-      <div className="text-center py-16" style={{ color: "var(--color-text-muted)" }}>
+      <div style={{ textAlign: "center", paddingTop: 64, color: "var(--color-faint)" }}>
         Nincsenek elérhető feladatok ehhez a képességhez.
       </div>
     );
   }
 
-  const hints = currentProblem.hints as Array<{ level: number; text_hu: string }>;
-  const phaseInfo = phaseLabels[phase];
-
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
-      {/* Header row */}
-      <div className="flex items-center justify-between">
-        <button
-          onClick={() => setShowExitConfirm(true)}
-          className="p-2 rounded-lg transition-colors"
-          style={{ color: "var(--color-text-muted)" }}
-          aria-label="Kilépés a feladatsorból"
-        >
-          <X size={18} />
-        </button>
-
-        <div className="flex items-center gap-3 text-sm">
-          <span
-            className="px-2.5 py-1 rounded-full text-xs font-medium"
-            style={{ background: "var(--color-bg-hover)", color: phaseInfo.color }}
-          >
-            {phaseInfo.label}
-          </span>
-          <span style={{ color: "var(--color-text-muted)" }}>
-            {currentIndex + 1} / {problems.length}
-          </span>
-        </div>
-
-        <span className="text-sm font-semibold" style={{ color: "var(--color-xp-400)" }}>
-          ⚡ {totalXp} XP
-        </span>
-      </div>
-
-      {/* Progress bar */}
-      <div
-        className="w-full rounded-full h-2 overflow-hidden"
-        style={{ background: "var(--color-bg-hover)" }}
-      >
-        <motion.div
-          className="h-2 rounded-full"
-          style={{ background: "var(--color-brand-500)", originX: 0 }}
-          animate={{ width: `${progressPct}%` }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-        />
+    <div style={{ maxWidth: 720, margin: "0 auto", position: "relative" }}>
+      {/* Phase progress strip */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
+        {problems.map((_, i) => {
+          const p = getPhase(i, problems.length);
+          const filled = i <= currentIndex;
+          return (
+            <div
+              key={i}
+              style={{
+                flex: 1,
+                height: 8,
+                borderRadius: 4,
+                background: filled ? PHASE_META[p].color : "var(--color-border)",
+                transition: "background 0.3s",
+              }}
+            />
+          );
+        })}
       </div>
 
       {/* Near-limit warning */}
       {isNearLimit && (
         <div
-          className="px-4 py-2.5 rounded-lg text-sm border"
           style={{
-            background: "var(--color-hint-950)",
-            borderColor: "var(--color-hint-border)",
-            color: "var(--color-hint-400)",
+            padding: "10px 14px",
+            borderRadius: 10,
+            background: "var(--color-amber-tint-2)",
+            color: "var(--color-amber-darker)",
+            fontSize: 13,
+            fontWeight: 700,
+            marginBottom: 16,
           }}
         >
-          <Lightbulb size={14} className="inline mr-2" />
-          1 feladatod maradt ma. <strong>Prémiummal korlátlan.</strong>
+          1 feladatod maradt ma. Prémiummal korlátlan.
         </div>
       )}
 
-      {/* Skill name */}
-      <div className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-        {skill.name_hu}
-      </div>
-
-      {/* Problem card */}
+      {/* Question card */}
       <AnimatePresence mode="wait">
         <motion.div
           key={currentIndex}
+          ref={cardRef}
           initial={{ opacity: 0, x: 24 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -24 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="rounded-2xl p-6 border"
-          style={{ background: "var(--color-bg-card)", borderColor: "var(--color-border-base)" }}
+          style={{
+            background: "#fff",
+            border: "1px solid var(--color-border)",
+            borderRadius: 20,
+            padding: 32,
+            position: "relative",
+          }}
         >
+          {/* Phase/skill eyebrow */}
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: ".05em",
+              color: phaseInfo.color,
+              marginBottom: 12,
+            }}
+          >
+            {phaseInfo.label} · {skill.name_hu}
+          </div>
+
           <ProblemDisplay
             problem={currentProblem}
             onAnswer={handleAnswer}
             disabled={!!feedback || isSubmitting}
           />
 
-          {/* Submitting overlay */}
+          {/* Submitting spinner */}
           {isSubmitting && (
-            <div className="mt-4 flex items-center gap-2 text-sm" style={{ color: "var(--color-text-muted)" }}>
+            <div
+              style={{
+                marginTop: 16,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                fontSize: 14,
+                color: "var(--color-muted)",
+              }}
+            >
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                className="w-4 h-4 rounded-full border-2 border-transparent border-t-current"
+                style={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: "50%",
+                  border: "2px solid transparent",
+                  borderTop: "2px solid var(--color-primary)",
+                }}
               />
               Értékelés…
             </div>
@@ -333,160 +457,222 @@ export default function PracticeSession({ skill, problems, userId, isPremium, pr
           {/* Network error */}
           {networkError && !isSubmitting && (
             <div
-              className="mt-4 p-3 rounded-lg border text-sm"
               style={{
-                background: "var(--color-danger-950)",
-                borderColor: "var(--color-danger-border)",
-                color: "var(--color-danger-400)",
+                marginTop: 16,
+                padding: "10px 14px",
+                borderRadius: 10,
+                background: "var(--color-danger-tint)",
+                color: "var(--color-danger)",
+                fontSize: 14,
               }}
             >
-              Hálózati hiba. Próbáld újra!
+              Hálózati hiba — próbáld újra!
             </div>
           )}
+
+          {/* Feedback banner */}
+          <AnimatePresence>
+            {feedback && (
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                style={{
+                  marginTop: 18,
+                  padding: "14px 16px",
+                  borderRadius: 12,
+                  background: feedback.correct ? "var(--color-success-tint)" : "var(--color-amber-tint-2)",
+                  color: feedback.correct ? "var(--color-success)" : "#B4761F",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 10,
+                }}
+              >
+                {feedback.correct ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
+                    <path d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
+                    <path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0" />
+                    <path d="M12 8v4" />
+                    <path d="M12 16h.01" />
+                  </svg>
+                )}
+                <div>
+                  {feedback.correct
+                    ? correctPhrase
+                    : "Még nem az — nézd meg az alábbi tippet, és próbáld újra!"}
+                  {feedback.correct && feedback.mastered && (
+                    <div style={{ fontSize: 13, opacity: 0.85, marginTop: 2 }}>
+                      🏆 Készség elsajátítva!
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Hints */}
+          {hintsShown > 0 && (
+            <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+              {hints.slice(0, hintsShown).map((h, i) => (
+                <div
+                  key={i}
+                  style={{
+                    background: "var(--color-surface)",
+                    borderRadius: 10,
+                    padding: "10px 14px",
+                    fontSize: 13.5,
+                    color: "var(--color-ink)",
+                  }}
+                >
+                  <strong>Tipp {i + 1}:</strong> {h.text_hu}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Footer row */}
+          <div
+            style={{
+              marginTop: 18,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            {/* Hint request button */}
+            {hintsShown < hints.length && !feedback ? (
+              <button
+                onClick={requestHint}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--color-primary)",
+                  fontSize: 13.5,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: 0,
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2l2 7h7l-6 4 2 7-5-4-5 4 2-7-6-4h7z" />
+                </svg>
+                Segítség kérése ({hintsShown}/3)
+              </button>
+            ) : (
+              <div />
+            )}
+
+            {/* Upsell note */}
+            {!isPremium && (
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-disabled)" }}>
+                Több tipp AI-val — Prémium
+              </div>
+            )}
+          </div>
+
+          {/* Next/summary button */}
+          {feedback && (
+            <motion.button
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              onClick={handleNext}
+              style={{
+                marginTop: 18,
+                width: "100%",
+                padding: "14px 24px",
+                borderRadius: 12,
+                fontWeight: 700,
+                fontSize: 15,
+                background: "var(--color-ink)",
+                color: "#fff",
+                border: "none",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+              }}
+            >
+              {isLastProblem ? "Összefoglaló" : "Következő"}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 5l7 7-7 7" />
+              </svg>
+            </motion.button>
+          )}
+
+          {/* XP popups */}
+          {xpPopups.map((popup) => (
+            <div
+              key={popup.id}
+              style={{
+                position: "absolute",
+                top: 12,
+                right: 12,
+                fontSize: 20,
+                fontWeight: 800,
+                color: "var(--color-amber)",
+                pointerEvents: "none",
+                animation: "xpFloat 1.3s ease-out forwards",
+              }}
+            >
+              +{popup.xp} XP
+            </div>
+          ))}
         </motion.div>
       </AnimatePresence>
 
-      {/* Feedback */}
-      <AnimatePresence>
-        {feedback && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            {feedback.correct ? (
-              <motion.div
-                initial={{ scale: 0.92 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 380, damping: 22 }}
-                className="rounded-xl p-4 text-center border"
-                style={{
-                  background: "var(--color-success-950)",
-                  borderColor: "var(--color-success-border)",
-                }}
-              >
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <CheckCircle size={18} style={{ color: "var(--color-success-400)" }} />
-                  <p className="font-bold text-lg" style={{ color: "var(--color-success-400)" }}>
-                    Helyes!
-                  </p>
-                </div>
-                <p className="text-sm" style={{ color: "var(--color-success-400)", opacity: 0.8 }}>
-                  Tudás: {Math.round(feedback.newPKnow * 100)}%
-                  {feedback.mastered && " 🏆 Képesség elsajátítva!"}
-                </p>
-              </motion.div>
-            ) : (
-              <div
-                className="rounded-xl p-4 space-y-3 border"
-                style={{ background: "var(--color-bg-card)", borderColor: "var(--color-border-strong)" }}
-              >
-                <p className="font-medium" style={{ color: "var(--color-hint-400)" }}>
-                  Majdnem! Gondold át újra.
-                </p>
+      {/* Exit button */}
+      <button
+        onClick={() => setShowExitConfirm(true)}
+        style={{
+          position: "fixed",
+          top: 20,
+          right: 24,
+          width: 36,
+          height: 36,
+          borderRadius: 10,
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "var(--color-muted)",
+          zIndex: 10,
+        }}
+        aria-label="Kilépés"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M6 6l12 12" /><path d="M18 6L6 18" />
+        </svg>
+      </button>
 
-                {hintLevel > 0 && hints[hintLevel - 1] && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="rounded-lg p-3"
-                    style={{ background: "var(--color-bg-hover)" }}
-                  >
-                    <span
-                      className="text-xs uppercase tracking-wide"
-                      style={{ color: "var(--color-text-muted)" }}
-                    >
-                      {hintLevel}. tipp
-                    </span>
-                    <p className="text-sm mt-1" style={{ color: "var(--color-text-secondary)" }}>
-                      {hints[hintLevel - 1].text_hu}
-                    </p>
-                  </motion.div>
-                )}
-
-                {hintLevel < hints.length && (
-                  <button
-                    onClick={() => setHintLevel((h) => h + 1)}
-                    className="text-sm flex items-center gap-1 transition-colors"
-                    style={{ color: "var(--color-brand-400)" }}
-                  >
-                    <Lightbulb size={14} />
-                    Következő tipp
-                  </button>
-                )}
-
-                {hintLevel >= hints.length && !showSolution && (
-                  <button
-                    onClick={() => setShowSolution(true)}
-                    className="text-sm transition-colors"
-                    style={{ color: "var(--color-text-muted)" }}
-                  >
-                    Mutatom a megoldást
-                  </button>
-                )}
-
-                {showSolution && (
-                  <div
-                    className="rounded-lg p-3 border"
-                    style={{
-                      background: "var(--color-hint-950)",
-                      borderColor: "var(--color-hint-border)",
-                    }}
-                  >
-                    <span
-                      className="text-xs uppercase tracking-wide"
-                      style={{ color: "var(--color-hint-400)", opacity: 0.7 }}
-                    >
-                      Megoldás
-                    </span>
-                    <p className="text-sm mt-1" style={{ color: "var(--color-hint-400)" }}>
-                      {currentProblem.solution_numeric !== null
-                        ? `Válasz: ${currentProblem.solution_numeric}`
-                        : currentProblem.solution_latex}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <button
-              onClick={handleNext}
-              className="mt-4 w-full py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
-              style={{ background: "var(--color-brand-500)", color: "white" }}
-            >
-              {currentIndex >= problems.length - 1 ? "Összefoglaló" : "Következő feladat"}
-              <ChevronRight size={18} />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* XP float — anchored near the XP text, not viewport-fixed */}
-      <AnimatePresence>
-        {xpAnimation !== null && (
-          <motion.div
-            initial={{ opacity: 1, y: 0 }}
-            animate={{ opacity: 0, y: -50 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.2, ease: "easeOut" }}
-            className="absolute top-16 right-8 text-xl font-bold pointer-events-none z-50"
-            style={{ color: "var(--color-xp-400)" }}
-          >
-            +{xpAnimation} XP
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Exit confirmation dialog */}
+      {/* Exit confirmation */}
       <AnimatePresence>
         {showExitConfirm && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: "rgba(0,0,0,0.7)" }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 50,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 16,
+              background: "rgba(34,31,54,0.4)",
+            }}
             onClick={() => setShowExitConfirm(false)}
           >
             <motion.div
@@ -494,32 +680,52 @@ export default function PracticeSession({ skill, problems, userId, isPremium, pr
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ type: "spring", stiffness: 380, damping: 26 }}
-              className="rounded-2xl p-6 max-w-sm w-full border"
-              style={{ background: "var(--color-bg-elevated)", borderColor: "var(--color-border-base)" }}
+              style={{
+                background: "#fff",
+                border: "1px solid var(--color-border)",
+                borderRadius: 20,
+                padding: 28,
+                maxWidth: 360,
+                width: "100%",
+              }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="font-bold text-lg mb-2" style={{ color: "var(--color-text-primary)" }}>
+              <h3 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-ink)", marginBottom: 8 }}>
                 Kilépsz a feladatsorból?
               </h3>
-              <p className="text-sm mb-6" style={{ color: "var(--color-text-secondary)" }}>
+              <p style={{ fontSize: 14, color: "var(--color-muted)", marginBottom: 24 }}>
                 A folyamatod elvész. Biztosan kilépel?
               </p>
-              <div className="flex gap-3">
+              <div style={{ display: "flex", gap: 12 }}>
                 <button
                   onClick={() => router.push("/app/skills")}
-                  className="flex-1 py-2.5 rounded-xl font-medium transition-colors border"
                   style={{
-                    background: "var(--color-bg-card)",
-                    borderColor: "var(--color-border-base)",
-                    color: "var(--color-text-secondary)",
+                    flex: 1,
+                    padding: "10px 0",
+                    borderRadius: 12,
+                    fontWeight: 600,
+                    fontSize: 14,
+                    background: "#fff",
+                    border: "1px solid var(--color-border)",
+                    color: "var(--color-muted)",
+                    cursor: "pointer",
                   }}
                 >
                   Kilépés
                 </button>
                 <button
                   onClick={() => setShowExitConfirm(false)}
-                  className="flex-1 py-2.5 rounded-xl font-semibold transition-colors"
-                  style={{ background: "var(--color-brand-500)", color: "white" }}
+                  style={{
+                    flex: 1,
+                    padding: "10px 0",
+                    borderRadius: 12,
+                    fontWeight: 700,
+                    fontSize: 14,
+                    background: "var(--color-primary)",
+                    border: "none",
+                    color: "#fff",
+                    cursor: "pointer",
+                  }}
                 >
                   Folytatom
                 </button>
