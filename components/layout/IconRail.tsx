@@ -48,7 +48,7 @@ export function IconRail() {
       style={{
         width: 88,
         flexShrink: 0,
-        background: "#FFFFFF",
+        background: "var(--color-card)",
         borderRight: "1px solid var(--color-border)",
         display: "flex",
         flexDirection: "column",

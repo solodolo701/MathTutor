@@ -1,11 +1,13 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { ThemeToggle } from "./ThemeToggle";
 
 const SCREEN_TITLES: Record<string, string> = {
   "/app/dashboard": "Irányítópult",
   "/app/skills": "Készségfa",
   "/app/profile": "Profil",
+  "/app/pricing": "Prémium",
 };
 
 function getScreenTitle(pathname: string): string {
@@ -35,7 +37,7 @@ export function GlobalHeader({
         justifyContent: "space-between",
         padding: "0 32px",
         borderBottom: "1px solid var(--color-border)",
-        background: "#FFFFFF",
+        background: "var(--color-card)",
         position: "sticky",
         top: 0,
         zIndex: 20,
@@ -48,7 +50,7 @@ export function GlobalHeader({
             onClick={() => router.push("/app/dashboard")}
             style={{
               border: "none",
-              background: "#F0EEFA",
+              background: "var(--color-surface-3)",
               width: 36,
               height: 36,
               borderRadius: 10,
@@ -71,8 +73,8 @@ export function GlobalHeader({
         </div>
       </div>
 
-      {/* Right: streak pill + XP pill */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      {/* Right: streak pill + XP pill + theme toggle */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         {streakCount > 0 && (
           <div
             style={{
@@ -122,6 +124,8 @@ export function GlobalHeader({
           </svg>
           {xpToday} XP ma
         </div>
+
+        <ThemeToggle />
       </div>
     </header>
   );

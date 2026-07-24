@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { BookOpen, Zap, Bot, Trophy, Shield, Users } from "lucide-react";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen text-white" style={{ background: "var(--color-bg-base)" }}>
+    <div className="flex flex-col min-h-screen" style={{ background: "var(--color-bg-base)", color: "var(--color-text-primary)" }}>
       {/* Header */}
       <header
         className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 backdrop-blur-md border-b"
-        style={{ background: "rgba(10,10,15,0.9)", borderColor: "var(--color-border-subtle)" }}
+        style={{ background: "var(--color-card)", borderColor: "var(--color-border-subtle)" }}
       >
         <div className="flex items-center gap-2.5">
           <div
@@ -21,6 +22,7 @@ export default function Home() {
           </span>
         </div>
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <Link
             href="/login"
             className="px-4 py-2 text-sm font-medium transition-colors"
@@ -57,10 +59,13 @@ export default function Home() {
               <span>Magyar NAT 2020 tanterv alapján</span>
             </div>
 
-            <h1 className="text-5xl sm:text-6xl font-bold tracking-tight mb-6 leading-[1.1]">
+            <h1
+              className="text-5xl sm:text-6xl font-bold tracking-tight mb-6 leading-[1.1]"
+              style={{ color: "var(--color-text-primary)" }}
+            >
               Okos matektanár
               <br />
-              <span style={{ color: "var(--color-brand-400)" }}>a zsebedben</span>
+              <span style={{ color: "var(--color-brand-500)" }}>a zsebedben</span>
             </h1>
 
             <p
@@ -114,7 +119,7 @@ export default function Home() {
               <div key={s.label}>
                 <div
                   className="text-2xl font-bold mb-1"
-                  style={{ color: "var(--color-brand-400)" }}
+                  style={{ color: "var(--color-brand-500)" }}
                 >
                   {s.value}
                 </div>
@@ -150,8 +155,8 @@ export default function Home() {
                   title: "Adaptív tanulás",
                   desc: "A Bayes-féle tudáskövetés alapján pontosan azt gyakorolod, amire a legtöbbet fejlődsz.",
                   accent: "var(--color-xp-400)",
-                  bg: "rgba(234,179,8,0.05)",
-                  border: "rgba(234,179,8,0.2)",
+                  bg: "var(--color-mastery-950)",
+                  border: "var(--color-mastery-border)",
                 },
                 {
                   Icon: Trophy,
@@ -169,7 +174,7 @@ export default function Home() {
                 >
                   <div
                     className="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
-                    style={{ background: "rgba(255,255,255,0.08)" }}
+                    style={{ background: "var(--color-surface-3)" }}
                   >
                     <f.Icon size={20} style={{ color: f.accent }} />
                   </div>

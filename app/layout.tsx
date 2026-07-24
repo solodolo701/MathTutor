@@ -27,10 +27,15 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#18181b",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#F5F4FB" },
+    { media: "(prefers-color-scheme: dark)", color: "#100F1E" },
+  ],
   width: "device-width",
   initialScale: 1,
 };
+
+const themeScript = `(function(){var t=localStorage.getItem('theme');if(!t)t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',t);})();`;
 
 export default function RootLayout({
   children,
@@ -39,6 +44,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="hu" suppressHydrationWarning className={`${jakarta.variable} ${jetbrains.variable} h-full antialiased`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

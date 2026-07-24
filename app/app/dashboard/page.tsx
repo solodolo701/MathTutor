@@ -106,7 +106,7 @@ export default async function DashboardPage() {
         {/* Streak card */}
         <div
           style={{
-            background: "#fff",
+            background: "var(--color-card)",
             border: "1px solid var(--color-border)",
             borderRadius: 20,
             padding: 24,
@@ -182,7 +182,7 @@ export default async function DashboardPage() {
           <div
             key={stat.label}
             style={{
-              background: "#fff",
+              background: "var(--color-card)",
               border: "1px solid var(--color-border)",
               borderRadius: 16,
               padding: 18,
@@ -216,7 +216,7 @@ export default async function DashboardPage() {
       {/* Daily quests */}
       <div
         style={{
-          background: "#fff",
+          background: "var(--color-card)",
           border: "1px solid var(--color-border)",
           borderRadius: 20,
           padding: 24,
@@ -322,7 +322,7 @@ export default async function DashboardPage() {
       {/* Season progress */}
       <div
         style={{
-          background: "#fff",
+          background: "var(--color-card)",
           border: "1px solid var(--color-border)",
           borderRadius: 20,
           padding: 24,

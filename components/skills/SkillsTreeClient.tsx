@@ -62,7 +62,7 @@ function NodeCircle({ skill }: { skill: SkillNode }) {
     );
   })();
 
-  const innerBg = skill.state === "mastered" ? "var(--color-amber)" : "#fff";
+  const innerBg = skill.state === "mastered" ? "var(--color-amber)" : "var(--color-card)";
 
   return (
     <div
@@ -160,7 +160,7 @@ export function SkillsTreeClient({ skills }: Props) {
             width: CANVAS_W,
             height: CANVAS_H,
             flexShrink: 0,
-            background: "#fff",
+            background: "var(--color-card)",
             border: "1px solid var(--color-border)",
             borderRadius: 20,
             position: "relative",
@@ -241,7 +241,7 @@ export function SkillsTreeClient({ skills }: Props) {
         <div
           style={{
             flex: 1,
-            background: "#fff",
+            background: "var(--color-card)",
             border: "1px solid var(--color-border)",
             borderRadius: 20,
             padding: 22,

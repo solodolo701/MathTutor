@@ -217,7 +217,7 @@ export default function PracticeSession({ skill, problems, userId, isPremium, pr
         style={{
           maxWidth: 460,
           margin: "0 auto",
-          background: "#fff",
+          background: "var(--color-card)",
           border: "1px solid var(--color-border)",
           borderRadius: 24,
           padding: 40,
@@ -400,7 +400,7 @@ export default function PracticeSession({ skill, problems, userId, isPremium, pr
           exit={{ opacity: 0, x: -24 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
           style={{
-            background: "#fff",
+            background: "var(--color-card)",
             border: "1px solid var(--color-border)",
             borderRadius: 20,
             padding: 32,
@@ -681,7 +681,7 @@ export default function PracticeSession({ skill, problems, userId, isPremium, pr
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ type: "spring", stiffness: 380, damping: 26 }}
               style={{
-                background: "#fff",
+                background: "var(--color-card)",
                 border: "1px solid var(--color-border)",
                 borderRadius: 20,
                 padding: 28,
@@ -705,7 +705,7 @@ export default function PracticeSession({ skill, problems, userId, isPremium, pr
                     borderRadius: 12,
                     fontWeight: 600,
                     fontSize: 14,
-                    background: "#fff",
+                    background: "var(--color-card)",
                     border: "1px solid var(--color-border)",
                     color: "var(--color-muted)",
                     cursor: "pointer",
