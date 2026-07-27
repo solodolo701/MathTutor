@@ -221,7 +221,7 @@ export function SkillsTreeClient({ skills }: Props) {
                 style={{
                   fontSize: 12.5,
                   fontWeight: 700,
-                  color: skill.state === "locked" ? "var(--color-disabled)" : "var(--color-ink)",
+                  color: skill.state === "locked" ? "var(--color-muted)" : "var(--color-ink)",
                   textAlign: "center",
                   lineHeight: 1.25,
                   maxWidth: 100,

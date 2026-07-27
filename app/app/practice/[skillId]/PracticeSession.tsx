@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Problem, Skill } from "@/types/supabase";
 import { ProblemDisplay } from "@/components/math/ProblemDisplay";
+import { MathText } from "@/components/math/MathDisplay";
 import { submitAnswer, updateStreak } from "@/app/actions/session";
 
 interface Props {
@@ -30,6 +31,10 @@ const PHASE_META: Record<Phase, { label: string; color: string }> = {
   practice: { label: "Gyakorlás",   color: "var(--color-primary)" },
   review:   { label: "Ismétlés",    color: "var(--color-amber)" },
 };
+
+// Hints escalate: nudge -> intermediate step -> worked answer. Naming them
+// by what they give lets a student stop before the answer is spoiled.
+const HINT_LABELS = ["Indulj innen", "Következő lépés", "Megoldás menete"];
 
 const CORRECT_PHRASES = [
   "Szuper! Pontosan így kell.",
@@ -516,23 +521,66 @@ export default function PracticeSession({ skill, problems, userId, isPremium, pr
             )}
           </AnimatePresence>
 
-          {/* Hints */}
+          {/* Hints — a scaffolded ladder, not an undifferentiated stack.
+              Each step says what it gives you, and the final one is marked
+              because it hands over the answer. */}
           {hintsShown > 0 && (
             <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
-              {hints.slice(0, hintsShown).map((h, i) => (
-                <div
-                  key={i}
-                  style={{
-                    background: "var(--color-surface)",
-                    borderRadius: 10,
-                    padding: "10px 14px",
-                    fontSize: 13.5,
-                    color: "var(--color-ink)",
-                  }}
-                >
-                  <strong>Tipp {i + 1}:</strong> {h.text_hu}
-                </div>
-              ))}
+              {hints.slice(0, hintsShown).map((h, i) => {
+                const isLast = i === hints.length - 1;
+                const accent = isLast ? "var(--color-amber)" : "var(--color-primary)";
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      background: "var(--color-surface)",
+                      borderLeft: `3px solid ${accent}`,
+                      borderRadius: "0 10px 10px 0",
+                      padding: "10px 14px",
+                      display: "flex",
+                      gap: 10,
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <div
+                      style={{
+                        flexShrink: 0,
+                        width: 20,
+                        height: 20,
+                        borderRadius: "50%",
+                        background: accent,
+                        color: "#fff",
+                        fontSize: 11,
+                        fontWeight: 800,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginTop: 1,
+                      }}
+                      aria-hidden="true"
+                    >
+                      {i + 1}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 800,
+                          textTransform: "uppercase",
+                          letterSpacing: ".05em",
+                          color: accent,
+                          marginBottom: 3,
+                        }}
+                      >
+                        {HINT_LABELS[Math.min(i, HINT_LABELS.length - 1)]}
+                      </div>
+                      <div style={{ fontSize: 14, lineHeight: 1.5, color: "var(--color-ink)" }}>
+                        <MathText text={h.text_hu} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -573,7 +621,7 @@ export default function PracticeSession({ skill, problems, userId, isPremium, pr
 
             {/* Upsell note */}
             {!isPremium && (
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-disabled)" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-muted)" }}>
                 Több tipp AI-val — Prémium
               </div>
             )}
@@ -592,8 +640,8 @@ export default function PracticeSession({ skill, problems, userId, isPremium, pr
                 borderRadius: 12,
                 fontWeight: 700,
                 fontSize: 15,
-                background: "var(--color-ink)",
-                color: "#fff",
+                background: "var(--color-neutral-solid)",
+                color: "var(--color-on-neutral)",
                 border: "none",
                 cursor: "pointer",
                 display: "flex",

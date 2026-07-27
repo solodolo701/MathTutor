@@ -2,26 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import type { Problem } from "@/types/supabase";
-import { MathDisplay } from "./MathDisplay";
+import { MathDisplay, MathText } from "./MathDisplay";
 
 interface ProblemDisplayProps {
   problem: Problem;
   onAnswer: (answer: string) => void;
   disabled?: boolean;
-}
-
-function RenderLatexText({ text }: { text: string }) {
-  const parts = text.split(/(\$[^$]+\$)/g);
-  return (
-    <>
-      {parts.map((part, i) => {
-        if (part.startsWith("$") && part.endsWith("$")) {
-          return <MathDisplay key={i} latex={part.slice(1, -1)} />;
-        }
-        return <span key={i}>{part}</span>;
-      })}
-    </>
-  );
 }
 
 function normalizeNumber(raw: string): string {
@@ -107,7 +93,7 @@ export function ProblemDisplay({ problem, onAnswer, disabled }: ProblemDisplayPr
 
       {/* Problem content */}
       <div className="text-lg leading-relaxed" style={{ color: "var(--color-text-primary)" }}>
-        <RenderLatexText text={problem.content_latex} />
+        <MathText text={problem.content_latex} />
       </div>
 
       {/* fill_number */}
@@ -187,7 +173,7 @@ export function ProblemDisplay({ problem, onAnswer, disabled }: ProblemDisplayPr
                   >
                     {label})
                   </span>
-                  <RenderLatexText text={optText} />
+                  <MathText text={optText} />
                 </button>
               );
             })

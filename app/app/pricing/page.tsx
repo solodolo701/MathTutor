@@ -35,8 +35,8 @@ export default async function PricingPage() {
   return (
     <div className="max-w-3xl mx-auto">
       <div className="text-center mb-12">
-        <h1 className="text-3xl font-bold text-white mb-3">Válassz tervet</h1>
-        <p className="text-zinc-400">
+        <h1 className="text-3xl font-bold text-[color:var(--color-ink)] mb-3">Válassz tervet</h1>
+        <p className="text-[color:var(--color-muted)]">
           Próbáld ki ingyen 7 napig — nem kell bankkártya az ingyenes próbához.
         </p>
       </div>
@@ -49,33 +49,33 @@ export default async function PricingPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
         {/* Free */}
-        <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6">
-          <h2 className="text-lg font-semibold text-white mb-1">Ingyenes</h2>
-          <div className="text-3xl font-bold text-white mb-4">
-            0 EUR<span className="text-base font-normal text-zinc-400">/hó</span>
+        <div className="bg-[color:var(--color-card)] border border-[color:var(--color-border)] rounded-2xl p-6">
+          <h2 className="text-lg font-semibold text-[color:var(--color-ink)] mb-1">Ingyenes</h2>
+          <div className="text-3xl font-bold text-[color:var(--color-ink)] mb-4">
+            0 EUR<span className="text-base font-normal text-[color:var(--color-muted)]">/hó</span>
           </div>
           <ul className="space-y-2 mb-6">
             {features.map((f, i) => (
               <li key={i} className={`flex items-center gap-2 text-sm ${
-                f.free === "—" ? "text-zinc-600" : "text-zinc-300"
+                f.free === "—" ? "text-[color:var(--color-muted)]" : "text-[color:var(--color-ink)]"
               }`}>
                 <span>{f.free === "—" ? "✗" : "✓"}</span>
                 {f.free === "—" ? f.premium : f.free}
               </li>
             ))}
           </ul>
-          <div className="w-full py-2 text-center text-zinc-500 text-sm">
+          <div className="w-full py-2 text-center text-[color:var(--color-muted)] text-sm">
             Jelenlegi terved
           </div>
         </div>
 
         {/* Premium */}
         <div className="bg-indigo-950 border-2 border-indigo-500 rounded-2xl p-6 relative">
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-indigo-500 text-white text-xs font-bold rounded-full">
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 text-xs font-bold rounded-full" style={{ background: "var(--color-primary-solid)", color: "var(--color-on-primary)" }}>
             LEGNÉPSZERŰBB
           </div>
-          <h2 className="text-lg font-semibold text-white mb-1">Prémium</h2>
-          <div className="text-3xl font-bold text-white mb-4">
+          <h2 className="text-lg font-semibold text-[color:var(--color-ink)] mb-1">Prémium</h2>
+          <div className="text-3xl font-bold text-[color:var(--color-ink)] mb-4">
             3,99 EUR<span className="text-base font-normal text-indigo-300">/hó</span>
           </div>
           <p className="text-indigo-300 text-sm mb-3">
@@ -92,7 +92,7 @@ export default async function PricingPage() {
           {!isPremium ? (
             <Link
               href="/api/stripe/checkout?plan=monthly"
-              className="block w-full py-3 bg-indigo-500 hover:bg-indigo-400 text-white text-center rounded-xl font-semibold transition-colors"
+              className="block w-full py-3 text-center rounded-xl font-semibold transition-colors" style={{ background: "var(--color-primary-solid)", color: "var(--color-on-primary)" }}
             >
               Előfizetés — 3,99 EUR/hó
             </Link>
@@ -107,7 +107,7 @@ export default async function PricingPage() {
         </div>
       </div>
 
-      <div className="text-center text-sm text-zinc-500">
+      <div className="text-center text-sm text-[color:var(--color-muted)]">
         <p>Az árak tartalmazzák a 27%-os magyar ÁFÁ-t. Stripe által biztonságos fizetés.</p>
         <p className="mt-1">
           Kérdésed van?{" "}
