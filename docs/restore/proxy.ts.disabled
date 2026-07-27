@@ -1,0 +1,75 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// DISABLED — Supabase auth gate. Not active in the current deployment.
+//
+// To restore once Supabase is connected:
+//   1. Copy this file to the project root as `proxy.ts`
+//      (Next.js 16 renamed the `middleware` convention to `proxy`.)
+//   2. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.
+//
+// Do NOT restore this as `middleware.ts`. In Next.js 16 the legacy
+// `middleware` convention is deprecated and still deploys as an Edge
+// Function on Vercel, where the @supabase/ssr import failed to bundle and
+// crashed every request with MIDDLEWARE_INVOCATION_FAILED. The `proxy`
+// convention defaults to the Node.js runtime, which does not have that
+// problem. See node_modules/next/dist/docs/01-app/03-api-reference/
+// 03-file-conventions/proxy.md ("Runtime" and "Migration to Proxy").
+//
+// Note: `runtime` must NOT be set in a proxy file — Next.js throws if it is.
+// ─────────────────────────────────────────────────────────────────────────────
+
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+
+export async function proxy(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          supabaseResponse = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const isProtectedRoute = request.nextUrl.pathname.startsWith("/app");
+  const isAuthRoute =
+    request.nextUrl.pathname.startsWith("/login") ||
+    request.nextUrl.pathname.startsWith("/signup");
+
+  if (isProtectedRoute && !user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  if (isAuthRoute && user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/app/dashboard";
+    return NextResponse.redirect(url);
+  }
+
+  return supabaseResponse;
+}
+
+export const config = {
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
+};
