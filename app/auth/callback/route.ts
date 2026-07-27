@@ -2,11 +2,16 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { DEMO_MODE } from "@/lib/demo/config";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/app/dashboard";
+
+  if (DEMO_MODE) {
+    return NextResponse.redirect(`${origin}/app/dashboard`);
+  }
 
   if (code) {
     const cookieStore = await cookies();
