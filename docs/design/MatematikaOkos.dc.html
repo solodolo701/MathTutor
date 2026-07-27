@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+  a { color: #5B4FE0; }
+  a:hover { color: #4238B8; }
+  @keyframes xpFloat { 0% { opacity:0; transform: translateY(0) scale(.8); } 15% { opacity:1; transform: translateY(-4px) scale(1); } 100% { opacity:0; transform: translateY(-54px) scale(1); } }
+  @keyframes feedbackPop { 0% { transform: scale(.9); opacity:0; } 60% { transform: scale(1.03); opacity:1; } 100% { transform: scale(1); opacity:1; } }
+  @keyframes flameFlicker { 0%,100% { transform: scale(1) rotate(0deg); } 50% { transform: scale(1.08) rotate(-2deg); } }
+  @keyframes connectorPulse { 0%,100% { opacity:.35; } 50% { opacity:1; } }
+  @keyframes barGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+</style>
+</helmet>
+<div style="display:flex; height:100vh; width:100%; background:#F5F4FB; color:#221F36; overflow:hidden;">
+  <div style="width:88px; flex-shrink:0; background:#FFFFFF; border-right:1px solid #E4E1F1; display:flex; flex-direction:column; align-items:center; padding:20px 0; gap:28px;">
+    <div style="width:40px; height:40px; border-radius:12px; background:#5B4FE0; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px;">M</div>
+    <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+      <button onClick="{{ goDashboard }}" style="width:48px; height:48px; border-radius:14px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; background:{{ navBg.dashboard }}; color:{{ navColor.dashboard }};" title="Irányítópult">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/><path d="M10 19v-5h4v5"/></svg>
+      </button>
+      <button onClick="{{ goSkills }}" style="width:48px; height:48px; border-radius:14px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; background:{{ navBg.skills }}; color:{{ navColor.skills }};" title="Készségfa">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="12" r="2.2"/><path d="M6 8.2V15.8"/><path d="M8.2 12H12a4 4 0 0 0 4-4"/></svg>
+      </button>
+      <button onClick="{{ goPractice }}" style="width:48px; height:48px; border-radius:14px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; background:{{ navBg.practice }}; color:{{ navColor.practice }};" title="Gyakorlás">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.6"/></svg>
+      </button>
+    </div>
+    <div style="flex:1;"></div>
+    <div style="width:40px; height:40px; border-radius:50%; background:#E9E6FB; display:flex; align-items:center; justify-content:center; color:#5B4FE0;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+    </div>
+  </div>
+
+  <div style="flex:1; display:flex; flex-direction:column; min-width:0;">
+    <div style="height:76px; flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:0 32px; border-bottom:1px solid #E4E1F1; background:#FFFFFF;">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <sc-if value="{{ screen === 'practice' }}">
+          <button onClick="{{ goDashboard }}" style="border:none; background:#F0EEFA; width:36px; height:36px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#5B4FE0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+          </button>
+        </sc-if>
+        <div style="font-size:22px; font-weight:800;">{{ screenTitle }}</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="display:flex; align-items:center; gap:6px; background:#FBEBD3; padding:8px 14px; border-radius:999px; font-weight:700; color:#B4761F; font-size:14px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: flameFlicker 1.8s ease-in-out infinite;"><path d="M12 3c1 3-3 4-3 8a3 3 0 0 0 6 0c0-2-1-3-1-4 2 1 3 3 3 5a5 5 0 0 1-10 0c0-4 3-6 5-9z"/></svg>
+          {{ streakDaysLabel }}
+        </div>
+        <div style="display:flex; align-items:center; gap:6px; background:#E9E6FB; padding:8px 14px; border-radius:999px; font-weight:700; color:#4238B8; font-size:14px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/></svg>
+          {{ xpTodayLabel }}
+        </div>
+        <button onClick="{{ toggleMotionSpec }}" style="border:1px solid #E4E1F1; background:#fff; width:36px; height:36px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#6B6785;" title="Animációs terv">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01"/><path d="M11 11h1v6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div style="flex:1; overflow:auto; padding:32px; position:relative;">
+
+      <sc-if value="{{ motionSpecOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; inset:16px; z-index:40; background:rgba(34,31,54,0.35); border-radius:20px; display:flex; align-items:flex-start; justify-content:center; padding-top:24px;">
+          <div style="background:#fff; border-radius:18px; padding:28px; width:min(640px,92%); max-height:88%; overflow:auto; box-shadow:0 24px 60px rgba(34,31,54,.25);">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+              <div style="font-size:20px; font-weight:800;">Animációs terv</div>
+              <button onClick="{{ toggleMotionSpec }}" style="border:none; background:#F0EEFA; width:32px; height:32px; border-radius:9px; cursor:pointer; color:#6B6785;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
+              </button>
+            </div>
+            <div style="font-size:13px; color:#6B6785; margin-bottom:18px;">Az olcsó animációk (XP felugrás, visszajelzés pop, progress sáv, láng flicker, node gyűrű pulzálás) élőben futnak ebben a prototípusban. Az alábbiak drágább, dokumentált tervek.</div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <sc-for list="{{ motionSpecItems }}" as="item" hint-placeholder-count="6">
+                <div style="border:1px solid #E4E1F1; border-radius:14px; padding:14px 16px;">
+                  <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                    <div style="font-weight:700; font-size:15px;">{{ item.name }}</div>
+                    <div style="font-size:12px; color:#A6A2BF; font-weight:600;">{{ item.duration }} · {{ item.easing }}</div>
+                  </div>
+                  <div style="font-size:13px; color:#6B6785; margin-top:2px;">Trigger: {{ item.trigger }}</div>
+                  <div style="font-size:13px; color:#221F36; margin-top:4px;">{{ item.description }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ screen === 'dashboard' }}" hint-placeholder-val="{{ true }}">
+        <div style="max-width:1080px; display:flex; flex-direction:column; gap:24px;">
+          <div style="font-size:26px; font-weight:800;">{{ greeting }}</div>
+
+          <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:20px;">
+            <div style="background:linear-gradient(135deg,#5B4FE0,#4238B8); border-radius:20px; padding:28px; color:#fff; display:flex; flex-direction:column; gap:14px;">
+              <div style="font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; opacity:.8;">Mai feladat</div>
+              <div style="font-size:24px; font-weight:800;">{{ dailySkillName }}</div>
+              <div style="font-size:14px; opacity:.85;">{{ dailySessionMeta }}</div>
+              <button onClick="{{ startPractice }}" style="align-self:flex-start; margin-top:6px; background:#fff; color:#4238B8; border:none; padding:12px 22px; border-radius:12px; font-weight:700; font-size:15px; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                Gyakorlás indítása
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+
+            <div style="background:#fff; border:1px solid #E4E1F1; border-radius:20px; padding:24px; display:flex; flex-direction:column; gap:12px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D98324" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: flameFlicker 1.8s ease-in-out infinite;"><path d="M12 3c1 3-3 4-3 8a3 3 0 0 0 6 0c0-2-1-3-1-4 2 1 3 3 3 5a5 5 0 0 1-10 0c0-4 3-6 5-9z"/></svg>
+                <div style="font-size:18px; font-weight:800;">{{ streakDaysLabel }}</div>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <sc-for list="{{ weekDots }}" as="d" hint-placeholder-count="7">
+                  <div style="width:24px; height:24px; border-radius:50%; background:{{ d.bg }}; border:2px solid {{ d.border }};"></div>
+                </sc-for>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:#6B6785; font-weight:600;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5B4FE0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/></svg>
+                2 sorozat-pajzsod van — egy kihagyott nap sem törli a sorozatot
+              </div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
+            <div style="background:#fff; border:1px solid #E4E1F1; border-radius:16px; padding:18px;">
+              <div style="font-size:12px; color:#A6A2BF; font-weight:700; text-transform:uppercase;">Elsajátított készségek</div>
+              <div style="font-size:24px; font-weight:800; margin-top:4px;">4 / 10</div>
+            </div>
+            <div style="background:#fff; border:1px solid #E4E1F1; border-radius:16px; padding:18px;">
+              <div style="font-size:12px; color:#A6A2BF; font-weight:700; text-transform:uppercase;">Heti XP</div>
+              <div style="font-size:24px; font-weight:800; margin-top:4px;">340</div>
+            </div>
+            <div style="background:#fff; border:1px solid #E4E1F1; border-radius:16px; padding:18px;">
+              <div style="font-size:12px; color:#A6A2BF; font-weight:700; text-transform:uppercase;">Csapat helyezés</div>
+              <div style="font-size:24px; font-weight:800; margin-top:4px;">#3</div>
+            </div>
+          </div>
+
+          <div style="background:#fff; border:1px solid #E4E1F1; border-radius:20px; padding:24px;">
+            <div style="font-size:16px; font-weight:800; margin-bottom:14px;">Napi küldetések</div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <sc-for list="{{ quests }}" as="q" hint-placeholder-count="3">
+                <div style="display:flex; align-items:center; gap:14px; padding:12px 14px; background:#F5F4FB; border-radius:12px;">
+                  <div style="width:34px; height:34px; border-radius:10px; background:{{ q.iconBg }}; display:flex; align-items:center; justify-content:center; color:{{ q.iconColor }}; flex-shrink:0;">{{ q.icon }}</div>
+                  <div style="flex:1;">
+                    <div style="font-weight:700; font-size:14px;">{{ q.title }}</div>
+                    <div style="height:6px; background:#E4E1F1; border-radius:4px; margin-top:6px; overflow:hidden;">
+                      <div style="height:100%; width:{{ q.pctLabel }}; background:#5B4FE0; border-radius:4px;"></div>
+                    </div>
+                  </div>
+                  <div style="font-size:13px; font-weight:700; color:#6B6785;">{{ q.progressLabel }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="background:#fff; border:1px solid #E4E1F1; border-radius:20px; padding:24px;">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px;">
+              <div style="font-size:16px; font-weight:800;">Egyenletek Kora — szezon</div>
+              <div style="font-size:13px; color:#6B6785; font-weight:600;">18 / 30 mérföldkő</div>
+            </div>
+            <div style="height:10px; background:#E9E6FB; border-radius:6px; overflow:hidden;">
+              <div style="height:100%; width:60%; background:linear-gradient(90deg,#E8A33D,#5B4FE0); border-radius:6px;"></div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ screen === 'skills' }}">
+        <div style="max-width:1080px;">
+          <div style="display:flex; gap:20px; margin-bottom:20px; align-items:center;">
+            <div style="font-size:14px; color:#6B6785;">A 9. évfolyam kerettanterve — kattints egy készségre a részletekért.</div>
+            <div style="flex:1;"></div>
+            <div style="display:flex; gap:16px; font-size:13px; font-weight:600; color:#6B6785;">
+              <div style="display:flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:50%; background:#C9C6DA; display:inline-block;"></span>Zárolva</div>
+              <div style="display:flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:50%; background:#5B4FE0; display:inline-block;"></span>Folyamatban</div>
+              <div style="display:flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:50%; background:#E8A33D; display:inline-block;"></span>Elsajátítva</div>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:24px; align-items:flex-start;">
+            <div style="position:relative; width:760px; height:560px; background:#fff; border:1px solid #E4E1F1; border-radius:20px; flex-shrink:0; overflow:auto;">
+              <svg width="760" height="560" style="position:absolute; top:0; left:0;">
+                <sc-for list="{{ connectors }}" as="c" hint-placeholder-count="7">
+                  <line x1="{{ c.x1 }}" y1="{{ c.y1 }}" x2="{{ c.x2 }}" y2="{{ c.y2 }}" stroke="{{ c.stroke }}" stroke-width="3" stroke-linecap="round" style="{{ c.animStyle }}"/>
+                </sc-for>
+              </svg>
+              <sc-for list="{{ skillNodes }}" as="n" hint-placeholder-count="10">
+                <div onClick="{{ n.onClick }}" style="position:absolute; left:{{ n.left }}; top:{{ n.top }}; width:120px; text-align:center; cursor:pointer;">
+                  <div style="width:64px; height:64px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center; background:{{ n.circleBg }}; box-shadow:{{ n.shadow }};">
+                    <div style="width:54px; height:54px; border-radius:50%; background:{{ n.innerBg }}; display:flex; align-items:center; justify-content:center; color:{{ n.iconColor }}; font-weight:800; font-size:14px;">{{ n.innerContent }}</div>
+                  </div>
+                  <div style="font-size:12.5px; font-weight:700; margin-top:8px; color:#221F36; line-height:1.25;">{{ n.name }}</div>
+                  <sc-if value="{{ n.gradeTag }}">
+                    <div style="font-size:10px; color:#A6A2BF; font-weight:700; margin-top:2px;">{{ n.gradeTag }}</div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="flex:1; background:#fff; border:1px solid #E4E1F1; border-radius:20px; padding:22px; min-height:300px;">
+              <sc-if value="{{ selectedSkill }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:12px; font-weight:700; color:#A6A2BF; text-transform:uppercase;">{{ selectedSkill.statusLabel }}</div>
+                <div style="font-size:20px; font-weight:800; margin-top:6px;">{{ selectedSkill.name }}</div>
+                <div style="font-size:14px; color:#6B6785; margin-top:8px; line-height:1.5;">{{ selectedSkill.description }}</div>
+                <div style="margin-top:16px;">
+                  <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; color:#6B6785; margin-bottom:6px;"><span>Elsajátítás</span><span>{{ selectedSkill.pctLabel }}</span></div>
+                  <div style="height:8px; background:#EFEDFA; border-radius:5px; overflow:hidden;">
+                    <div style="height:100%; width:{{ selectedSkill.pctLabel }}; background:{{ selectedSkill.barColor }}; border-radius:5px;"></div>
+                  </div>
+                </div>
+                <sc-if value="{{ selectedSkill.locked }}">
+                  <div style="margin-top:18px; background:#F5F4FB; border-radius:12px; padding:12px 14px; font-size:13px; color:#6B6785; display:flex; gap:8px; align-items:center;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A6A2BF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                    Előbb teljesítsd: {{ selectedSkill.prereqName }}
+                  </div>
+                </sc-if>
+                <sc-if value="{{ !selectedSkill.locked }}">
+                  <button onClick="{{ startPractice }}" style="margin-top:18px; background:#5B4FE0; color:#fff; border:none; padding:12px 20px; border-radius:12px; font-weight:700; font-size:14px; cursor:pointer;">Gyakorlás indítása</button>
+                </sc-if>
+              </sc-if>
+              <sc-if value="{{ !selectedSkill }}" hint-placeholder-val="{{ true }}">
+                <div style="color:#A6A2BF; font-size:14px; padding-top:40px; text-align:center;">Válassz egy készséget a térképen</div>
+              </sc-if>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ screen === 'practice' }}">
+        <div style="max-width:720px; margin:0 auto;">
+          <sc-if value="{{ !sessionDone }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; gap:4px; margin-bottom:24px;">
+              <sc-for list="{{ progressSegments }}" as="seg" hint-placeholder-count="7">
+                <div style="flex:1; height:8px; border-radius:4px; background:{{ seg.color }};"></div>
+              </sc-for>
+            </div>
+
+            <div style="font-size:12px; font-weight:700; color:#5B4FE0; text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;">{{ currentProblem.phaseLabel }} · {{ currentProblem.skillName }}</div>
+
+            <div style="background:#fff; border:1px solid #E4E1F1; border-radius:20px; padding:32px; position:relative;">
+              <sc-for list="{{ xpPopups }}" as="p" hint-placeholder-count="0">
+                <div style="position:absolute; top:20px; right:32px; font-size:20px; font-weight:800; color:#E8A33D; animation: xpFloat 1.3s ease-out forwards; pointer-events:none;">+{{ p.xp }} XP</div>
+              </sc-for>
+
+              <div style="font-size:16px; color:#6B6785; margin-bottom:10px;">{{ currentProblem.prompt }}</div>
+              <div style="font-size:30px; font-weight:800; letter-spacing:.01em; margin-bottom:26px;">{{ currentProblem.latex }}</div>
+
+              <div style="display:flex; gap:12px; align-items:center;">
+                <input type="number" value="{{ userAnswer }}" onChange="{{ onAnswerChange }}" disabled="{{ answered }}" placeholder="Válasz" style="flex:1; padding:14px 16px; border-radius:12px; border:2px solid #E4E1F1; font-size:16px; font-weight:700; outline:none;"/>
+                <sc-if value="{{ !answered }}">
+                  <button onClick="{{ submitAnswer }}" style="background:#5B4FE0; color:#fff; border:none; padding:14px 24px; border-radius:12px; font-weight:700; font-size:15px; cursor:pointer;">Ellenőrzés</button>
+                </sc-if>
+                <sc-if value="{{ answered }}">
+                  <button onClick="{{ nextProblem }}" style="background:#221F36; color:#fff; border:none; padding:14px 24px; border-radius:12px; font-weight:700; font-size:15px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                    {{ nextButtonLabel }}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+                  </button>
+                </sc-if>
+              </div>
+
+              <sc-if value="{{ feedback }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:18px; padding:14px 16px; border-radius:12px; background:{{ feedback.bg }}; color:{{ feedback.color }}; font-weight:700; font-size:14px; display:flex; align-items:center; gap:10px; animation: feedbackPop .4s ease-out;">
+                  {{ feedback.icon }}
+                  {{ feedback.message }}
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ visibleHints.length > 0 }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:16px; display:flex; flex-direction:column; gap:8px;">
+                  <sc-for list="{{ visibleHints }}" as="h" hint-placeholder-count="0">
+                    <div style="background:#F5F4FB; border-radius:10px; padding:10px 14px; font-size:13.5px; color:#221F36;"><b>Tipp {{ h.level }}:</b> {{ h.text }}</div>
+                  </sc-for>
+                </div>
+              </sc-if>
+
+              <div style="margin-top:16px; display:flex; align-items:center; justify-content:space-between;">
+                <sc-if value="{{ canRequestHint }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ requestHint }}" style="background:none; border:none; color:#5B4FE0; font-weight:700; font-size:13.5px; cursor:pointer; padding:0; display:flex; align-items:center; gap:6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.6-4.6 4 1.4 6-5.5-3.3-5.5 3.3 1.4-6-4.6-4 6.1-.6z"/></svg>
+                    Segítség kérése ({{ hintsShown }}/3)
+                  </button>
+                </sc-if>
+                <div style="font-size:12px; color:#C9C6DA; font-weight:700;">Több tipp AI-val — Prémium</div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ sessionDone }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff; border:1px solid #E4E1F1; border-radius:24px; padding:40px; text-align:center; animation: feedbackPop .5s ease-out;">
+              <div style="font-size:14px; font-weight:700; color:#A6A2BF; text-transform:uppercase; letter-spacing:.05em;">Munka elvégezve</div>
+              <div style="font-size:44px; font-weight:800; color:#E8A33D; margin:14px 0;">+{{ sessionXp }} XP</div>
+              <div style="display:flex; align-items:center; justify-content:center; gap:8px; color:#D98324; font-weight:700; margin-bottom:24px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: flameFlicker 1.8s ease-in-out infinite;"><path d="M12 3c1 3-3 4-3 8a3 3 0 0 0 6 0c0-2-1-3-1-4 2 1 3 3 3 5a5 5 0 0 1-10 0c0-4 3-6 5-9z"/></svg>
+                {{ streakDoneLabel }}
+              </div>
+              <div style="display:flex; flex-direction:column; gap:10px; text-align:left; max-width:420px; margin:0 auto 28px;">
+                <sc-for list="{{ improvedSkills }}" as="s" hint-placeholder-count="2">
+                  <div style="background:#F5F4FB; border-radius:12px; padding:12px 16px;">
+                    <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; margin-bottom:6px;"><span>{{ s.name }}</span><span style="color:#2FA36B;">{{ s.fromLabel }} → {{ s.toLabel }}</span></div>
+                    <div style="height:6px; background:#E4E1F1; border-radius:4px; overflow:hidden;"><div style="height:100%; width:{{ s.toLabel }}; background:#2FA36B; border-radius:4px;"></div></div>
+                  </div>
+                </sc-for>
+              </div>
+              <button onClick="{{ goDashboard }}" style="background:#5B4FE0; color:#fff; border:none; padding:14px 28px; border-radius:12px; font-weight:700; font-size:15px; cursor:pointer;">Vissza az irányítópulthoz</button>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;streakDays&quot;: {&quot;editor&quot;: &quot;int&quot;, &quot;default&quot;: 6, &quot;min&quot;: 0, &quot;max&quot;: 60, &quot;tsType&quot;: &quot;number&quot;}, &quot;sessionSize&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;standard&quot;, &quot;options&quot;: [&quot;short&quot;, &quot;standard&quot;, &quot;long&quot;], &quot;tsType&quot;: &quot;string&quot;}}">
+class Component extends DCLogic {
+  state = {
+    screen: 'dashboard',
+    motionSpecOpen: false,
+    selectedSkillId: null,
+    idx: 0,
+    userAnswer: '',
+    answered: false,
+    hintsShown: 0,
+    wrongAttempts: 0,
+    feedbackState: null,
+    sessionXp: 0,
+    xpPopups: [],
+    popupSeq: 0,
+    sessionDone: false,
+  };
+
+  problemPools() {
+    return {
+      warmup: [
+        { skillName: 'Valós számok', prompt: 'Számítsd ki:', latex: '|-8| + |3| =', answer: 11,
+          hints: ['Az abszolútérték mindig nem-negatív számot ad.', '|-8| = 8, |3| = 3.', 'Add össze: 8 + 3 = 11.'] },
+        { skillName: 'Algebrai kifejezések', prompt: 'Mennyi az x együtthatója itt:', latex: '4x + 3x', answer: 7,
+          hints: ['Az egynemű tagok együtthatóit összeadhatod.', '4 és 3 ugyanahhoz a változóhoz tartozik.', '4 + 3 = 7.'] },
+        { skillName: 'Valós számok', prompt: 'Mennyi az összeg?', latex: '-5 + 12 =', answer: 7,
+          hints: ['A számegyenesen indulj -5-től.', 'Lépj 12-t jobbra.', '-5 + 12 = 7.'] },
+      ],
+      practice: [
+        { skillName: 'Lineáris egyenletek', prompt: 'Oldd meg az egyenletet:', latex: '3x + 7 = 22', answer: 5,
+          hints: ['Rendezd az x-es tagot egyedül a bal oldalra.', 'Vonj ki 7-et mindkét oldalból: 3x = 15.', 'Oszd el 3-mal: x = 5.'] },
+        { skillName: 'Lineáris egyenletek', prompt: 'Oldd meg az egyenletet:', latex: '5x - 4 = 21', answer: 5,
+          hints: ['Add hozzá 4-et mindkét oldalhoz.', '5x = 25.', 'Oszd el 5-tel: x = 5.'] },
+        { skillName: 'Lineáris egyenletek', prompt: 'Oldd meg az egyenletet:', latex: '2(x+3) = 14', answer: 4,
+          hints: ['Bontsd fel a zárójelet: 2x + 6 = 14.', 'Vonj ki 6-ot: 2x = 8.', 'Oszd el 2-vel: x = 4.'] },
+        { skillName: 'Lineáris egyenletek', prompt: 'Oldd meg az egyenletet:', latex: '7x - 2 = 5x + 8', answer: 5,
+          hints: ['Vonj ki 5x-et mindkét oldalból.', '2x - 2 = 8, majd 2x = 10.', 'x = 5.'] },
+        { skillName: 'Lineáris függvények', prompt: 'Az f(x) = 2x - 1 esetén mennyi f(4)?', latex: 'f(4) = ?', answer: 7,
+          hints: ['Helyettesítsd be x helyére 4-et.', 'f(4) = 2·4 - 1.', '8 - 1 = 7.'] },
+      ],
+      review: [
+        { skillName: 'Algebrai kifejezések', prompt: 'Egyszerűsítsd, majd add meg az x együtthatóját:', latex: '2(x+1) + 3x', answer: 5,
+          hints: ['Bontsd fel a zárójelet: 2x + 2 + 3x.', 'Vond össze az x-es tagokat.', '2x + 3x = 5x → az együttható 5.'] },
+        { skillName: 'Valós számok', prompt: 'Számítsd ki:', latex: '(-3)² =', answer: 9,
+          hints: ['A négyzet önmagával szorzás.', '(-3)·(-3).', 'Két negatív szorzata pozitív: 9.'] },
+      ],
+    };
+  }
+
+  buildProblems() {
+    const size = this.props.sessionSize || 'standard';
+    const counts = { short: { warmup: 2, practice: 2, review: 1 }, standard: { warmup: 2, practice: 4, review: 1 }, long: { warmup: 3, practice: 5, review: 2 } }[size] || { warmup: 2, practice: 4, review: 1 };
+    const pools = this.problemPools();
+    const tag = (arr, phase, label) => arr.slice(0, counts[phase]).map(p => ({ ...p, phase, phaseLabel: label }));
+    return [...tag(pools.warmup, 'warmup', 'Bemelegítés'), ...tag(pools.practice, 'practice', 'Gyakorlás'), ...tag(pools.review, 'review', 'Ismétlés')];
+  }
+
+  skillsData() {
+    return [
+      { id: 'real-numbers', name: 'Valós számok', x: 90, y: 90, state: 'mastered', pct: 1, prereq: null, desc: 'Egészek, racionális és irracionális számok tulajdonságai és műveletei.' },
+      { id: 'algebraic-expressions', name: 'Algebrai kifejezések', x: 280, y: 90, state: 'mastered', pct: 1, prereq: 'real-numbers', desc: 'Polinomok, szorzattá alakítás, algebrai törtek egyszerűsítése.' },
+      { id: 'linear-equations', name: 'Lineáris egyenletek', x: 470, y: 90, state: 'active', pct: 0.58, prereq: 'algebraic-expressions', desc: 'Elsőfokú egyenletek és egyenlőtlenségek megoldása egy ismeretlennel.' },
+      { id: 'linear-functions', name: 'Lineáris függvények', x: 660, y: 90, state: 'locked', pct: 0, prereq: 'linear-equations', desc: 'Meredekség, tengelymetszet és grafikon-elemzés.' },
+      { id: 'systems-of-equations', name: 'Egyenletrendszerek', x: 470, y: 230, state: 'locked', pct: 0, prereq: 'linear-equations', desc: '2×2-es lineáris egyenletrendszerek megoldási módszerei.' },
+      { id: 'basic-geometry', name: 'Alapgeometria', x: 90, y: 340, state: 'active', pct: 0.32, prereq: null, desc: 'Háromszögek, négyszögek alapvető tulajdonságai.' },
+      { id: 'triangle-congruence', name: 'Háromszögek egybevágósága', x: 280, y: 340, state: 'locked', pct: 0, prereq: 'basic-geometry', desc: 'Egybevágósági alapesetek és bizonyítási technikák.' },
+      { id: 'statistics-intro', name: 'Alapstatisztika', x: 90, y: 470, state: 'active', pct: 0.18, prereq: null, desc: 'Leíró statisztika: átlag, medián, szórás.' },
+      { id: 'combinatorics', name: 'Kombinatorika', x: 280, y: 470, state: 'locked', pct: 0, prereq: 'statistics-intro', gradeTag: '10. évf.', desc: 'Permutációk és kombinációk alapjai.' },
+      { id: 'probability', name: 'Klasszikus valószínűség', x: 470, y: 470, state: 'locked', pct: 0, prereq: 'combinatorics', gradeTag: '10. évf.', desc: 'Klasszikus valószínűségi modell és alkalmazásai.' },
+    ];
+  }
+
+  goDashboard = () => this.setState({ screen: 'dashboard', motionSpecOpen: false });
+  goSkills = () => this.setState({ screen: 'skills', motionSpecOpen: false });
+  goPractice = () => this.startPractice();
+  toggleMotionSpec = () => this.setState(s => ({ motionSpecOpen: !s.motionSpecOpen }));
+
+  startPractice = () => {
+    this.setState({
+      screen: 'practice', idx: 0, userAnswer: '', answered: false, hintsShown: 0, wrongAttempts: 0,
+      feedbackState: null, sessionXp: 0, xpPopups: [], sessionDone: false, motionSpecOpen: false,
+    });
+  };
+
+  selectSkill = (id) => this.setState({ selectedSkillId: id, screen: 'skills' });
+
+  onAnswerChange = (e) => this.setState({ userAnswer: e.target.value });
+
+  submitAnswer = () => {
+    const problems = this.buildProblems();
+    const problem = problems[this.state.idx];
+    const correct = Number(this.state.userAnswer) === problem.answer;
+    if (correct) {
+      const xp = Math.max(4, 10 - this.state.hintsShown * 2);
+      const id = this.state.popupSeq + 1;
+      this.setState(s => ({
+        answered: true, feedbackState: 'correct', sessionXp: s.sessionXp + xp,
+        xpPopups: [...s.xpPopups, { id, xp }], popupSeq: id,
+      }));
+      setTimeout(() => this.setState(s => ({ xpPopups: s.xpPopups.filter(p => p.id !== id) })), 1400);
+    } else {
+      this.setState(s => ({
+        wrongAttempts: s.wrongAttempts + 1,
+        hintsShown: Math.min(3, Math.max(s.hintsShown, s.wrongAttempts + 1)),
+        feedbackState: 'retry',
+      }));
+    }
+  };
+
+  requestHint = () => this.setState(s => ({ hintsShown: Math.min(3, s.hintsShown + 1) }));
+
+  nextProblem = () => {
+    const problems = this.buildProblems();
+    this.setState(s => {
+      const nextIdx = s.idx + 1;
+      if (nextIdx >= problems.length) return { sessionDone: true };
+      return { idx: nextIdx, userAnswer: '', answered: false, hintsShown: 0, wrongAttempts: 0, feedbackState: null };
+    });
+  };
+
+  renderVals() {
+    const screen = this.state.screen;
+    const streakDays = this.props.streakDays ?? 6;
+    const navBg = {
+      dashboard: screen === 'dashboard' ? '#E9E6FB' : 'transparent',
+      skills: screen === 'skills' ? '#E9E6FB' : 'transparent',
+      practice: screen === 'practice' ? '#E9E6FB' : 'transparent',
+    };
+    const navColor = {
+      dashboard: screen === 'dashboard' ? '#5B4FE0' : '#A6A2BF',
+      skills: screen === 'skills' ? '#5B4FE0' : '#A6A2BF',
+      practice: screen === 'practice' ? '#5B4FE0' : '#A6A2BF',
+    };
+    const screenTitle = { dashboard: 'Irányítópult', skills: 'Készségfa', practice: 'Gyakorlás' }[screen];
+
+    const weekDots = [0, 1, 2, 3, 4, 5, 6].map(i => {
+      const filled = i < Math.min(streakDays, 7);
+      return { bg: filled ? '#E8A33D' : 'transparent', border: filled ? '#E8A33D' : '#E4E1F1' };
+    });
+
+    const quests = [
+      { title: 'Oldj meg 5 lineáris egyenletet', progressLabel: '3/5', pctLabel: '60%', icon: '✓', iconBg: '#E9E6FB', iconColor: '#5B4FE0' },
+      { title: 'Segíts egy csapattársnak egy tippel', progressLabel: '0/1', pctLabel: '0%', icon: '★', iconBg: '#FBEBD3', iconColor: '#E8A33D' },
+      { title: 'Fejezz be egy teljes napi gyakorlást', progressLabel: '0/1', pctLabel: '0%', icon: '●', iconBg: '#E4F5EC', iconColor: '#2FA36B' },
+    ];
+
+    // skills tree
+    const skills = this.skillsData();
+    const byId = Object.fromEntries(skills.map(s => [s.id, s]));
+    const skillNodes = skills.map(n => {
+      const colorFor = { mastered: '#E8A33D', active: '#5B4FE0', locked: '#EFEDFA' }[n.state];
+      const ring = n.state === 'active' ? `conic-gradient(${colorFor} ${n.pct * 360}deg, #EFEDFA 0deg)` : colorFor;
+      const innerContent = n.state === 'mastered' ? '✓' : n.state === 'active' ? `${Math.round(n.pct * 100)}%` : (
+        '⌁'
+      );
+      return {
+        left: `${n.x - 60}px`, top: `${n.y - 40}px`, name: n.name, gradeTag: n.gradeTag || null,
+        circleBg: n.state === 'active' ? ring : (n.state === 'mastered' ? '#E8A33D' : '#ECEBF4'),
+        innerBg: n.state === 'mastered' ? '#E8A33D' : '#FFFFFF',
+        iconColor: n.state === 'mastered' ? '#FFFFFF' : (n.state === 'active' ? '#5B4FE0' : '#A6A2BF'),
+        innerContent,
+        shadow: n.state === 'mastered' ? '0 6px 16px rgba(232,163,61,.4)' : 'none',
+        onClick: () => this.selectSkill(n.id),
+      };
+    });
+
+    const edgesData = [
+      ['real-numbers', 'algebraic-expressions'], ['algebraic-expressions', 'linear-equations'],
+      ['linear-equations', 'linear-functions'], ['linear-equations', 'systems-of-equations'],
+      ['basic-geometry', 'triangle-congruence'], ['statistics-intro', 'combinatorics'], ['combinatorics', 'probability'],
+    ];
+    const connectors = edgesData.map(([a, b]) => {
+      const from = byId[a], to = byId[b];
+      const locked = to.state === 'locked' && from.state !== 'mastered' && from.state !== 'active';
+      const isCurrentEdge = to.id === 'linear-equations';
+      return {
+        x1: from.x, y1: from.y, x2: to.x, y2: to.y,
+        stroke: to.state === 'locked' && from.state === 'locked' ? '#D9D6E8' : '#9C8FF0',
+        animStyle: isCurrentEdge ? 'animation: connectorPulse 2.2s ease-in-out infinite;' : '',
+      };
+    });
+
+    const selId = this.state.selectedSkillId;
+    const sel = selId ? byId[selId] : null;
+    const selectedSkill = sel ? {
+      name: sel.name, description: sel.desc, locked: sel.state === 'locked',
+      statusLabel: { mastered: 'Elsajátítva', active: 'Folyamatban', locked: 'Zárolva' }[sel.state],
+      pctLabel: `${Math.round(sel.pct * 100)}%`, barColor: sel.state === 'mastered' ? '#E8A33D' : '#5B4FE0',
+      prereqName: sel.prereq ? byId[sel.prereq].name : '',
+    } : null;
+
+    // motion spec
+    const motionSpecItems = [
+      { name: 'Konfetti kitörés', trigger: 'készség elsajátítása / szintlépés', description: 'Canvas-alapú részecskerobbanás arany és lila tónusokban.', duration: '900ms', easing: 'cubic-bezier(.16,1,.3,1)' },
+      { name: 'Oldalváltás', trigger: 'navigáció a képernyők között', description: 'Megosztott tengelyű csúsztatás és áttűnés (shared-axis slide + fade).', duration: '240ms', easing: 'ease-out' },
+      { name: 'Kitüntetés felfedése', trigger: 'új badge megszerzése', description: 'Lottie pörgés + nagyítás pop, majd toast értesítés.', duration: '600ms', easing: 'spring (stiffness 260, damping 20)' },
+      { name: 'Zárolás feloldása a fán', trigger: 'előfeltétel teljesítése', description: 'Gyűrű kitöltése, majd fényglow-kirobbanás a node körül.', duration: '500ms', easing: 'cubic-bezier(.34,1.56,.64,1)' },
+      { name: 'Sorozat mérföldkő', trigger: '3 / 7 / 14 / 30 napos sorozat', description: 'Lángikon felnagyítás-pulzálás, kísérő konfettivel.', duration: '800ms', easing: 'ease-in-out' },
+      { name: 'Szezon mérföldkő', trigger: 'szezon-progresszió lépés', description: 'Sáv kitöltése, csillag pop-in a mérföldkő fölött.', duration: '450ms', easing: 'ease-out' },
+    ];
+
+    // practice
+    const problems = this.buildProblems();
+    const idx = Math.min(this.state.idx, problems.length - 1);
+    const currentProblem = problems[idx];
+    const total = problems.length;
+    const progressSegments = problems.map((p, i) => {
+      const phaseColor = { warmup: '#D98324', practice: '#5B4FE0', review: '#E8A33D' }[p.phase];
+      return { color: i <= idx ? phaseColor : '#E4E1F1' };
+    });
+
+    const answered = this.state.answered;
+    const feedback = this.state.feedbackState === 'correct' ? {
+      bg: '#E4F5EC', color: '#2FA36B', icon: '✓',
+      message: ['Szuper! Pontosan így kell.', 'Remek munka!', 'Magabiztosan haladsz!', 'Ügyes vagy — ez az!'][idx % 4],
+    } : this.state.feedbackState === 'retry' ? {
+      bg: '#FBE9D6', color: '#B4761F', icon: '↻',
+      message: 'Még nem az — nézd meg az alábbi tippet, és próbáld újra!',
+    } : null;
+
+    const visibleHints = currentProblem.hints.slice(0, this.state.hintsShown).map((text, i) => ({ level: i + 1, text }));
+
+    const improvedFrom = { 'Lineáris egyenletek': 55, 'Algebrai kifejezések': 92, 'Alapgeometria': 30, 'Alapstatisztika': 16 };
+    const improvedSkills = [...new Set(problems.map(p => p.skillName))].slice(0, 2).map(name => {
+      const from = improvedFrom[name] ?? 40;
+      const to = Math.min(99, from + 8);
+      return { name, fromLabel: `${from}%`, toLabel: `${to}%` };
+    });
+
+    return {
+      screen, navBg, navColor, screenTitle,
+      streakDaysLabel: `${streakDays} napos sorozat`,
+      xpTodayLabel: `${this.state.sessionXp} XP ma`,
+      greeting: 'Szia, Nóra! Készen állsz a mai adagra?',
+      dailySkillName: 'Lineáris egyenletek',
+      dailySessionMeta: `${problems.length} feladat · kb. 15 perc`,
+      weekDots, quests,
+      motionSpecOpen: this.state.motionSpecOpen, toggleMotionSpec: this.toggleMotionSpec, motionSpecItems,
+      goDashboard: this.goDashboard, goSkills: this.goSkills, goPractice: this.goPractice, startPractice: this.startPractice,
+      skillNodes, connectors, selectedSkill,
+      currentProblem, progressSegments, userAnswer: this.state.userAnswer, onAnswerChange: this.onAnswerChange,
+      answered, submitAnswer: this.submitAnswer, nextProblem: this.nextProblem,
+      nextButtonLabel: idx >= total - 1 ? 'Összefoglaló' : 'Következő',
+      feedback, visibleHints, hintsShown: this.state.hintsShown,
+      canRequestHint: this.state.hintsShown < 3 && !answered,
+      requestHint: this.requestHint,
+      xpPopups: this.state.xpPopups,
+      sessionDone: this.state.sessionDone, sessionXp: this.state.sessionXp,
+      streakDoneLabel: `${streakDays + 1} napos sorozat aktív`,
+      improvedSkills,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

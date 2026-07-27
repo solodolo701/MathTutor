@@ -1,0 +1,290 @@
+@import "tailwindcss";
+@import "katex/dist/katex.min.css";
+
+/* ── Light theme (default) ───────────────────────────────────────── */
+:root {
+  /* Core surfaces */
+  --color-surface:        #F5F4FB;
+  --color-card:           #FFFFFF;
+  --color-ink:            #221F36;
+  --color-muted:          #6B6785;
+  --color-faint:          #A6A2BF;
+  --color-disabled:       #C9C6DA;
+  --color-border:         #E4E1F1;
+  --color-surface-2:      #EFEDFA;
+  --color-surface-3:      #E9E6FB;
+  --color-surface-4:      #ECEBF4;
+
+  /* Brand / Primary */
+  --color-primary:        #5B4FE0;
+  --color-primary-dark:   #4238B8;
+
+  /* Amber */
+  --color-amber:          #E8A33D;
+  --color-amber-dark:     #D98324;
+  --color-amber-darker:   #B4761F;
+  --color-amber-tint:     #FBEBD3;
+  --color-amber-tint-2:   #FBE9D6;
+
+  /* Success */
+  --color-success:        #2FA36B;
+  --color-success-tint:   #E4F5EC;
+
+  /* Danger */
+  --color-danger:         #D84C4C;
+  --color-danger-tint:    #FDE8E8;
+
+  /* Connectors */
+  --color-connector:      #9C8FF0;
+  --color-locked-conn:    #D9D6E8;
+
+  /* Shadows */
+  --shadow-card:          0 1px 3px rgba(34,31,54,.06), 0 1px 2px rgba(34,31,54,.04);
+  --shadow-mastered:      0 6px 16px rgba(232,163,61,.4);
+  --shadow-glow-brand:    0 0 20px rgba(91,79,224,.2);
+  --shadow-glow-mastery:  0 0 20px rgba(232,163,61,.35);
+  --shadow-glow-streak:   0 0 20px rgba(217,131,36,.3);
+
+  /* ── Legacy aliases (existing components) ── */
+  --color-bg-base:        #F5F4FB;
+  --color-bg-elevated:    #FFFFFF;
+  --color-bg-card:        #FFFFFF;
+  --color-bg-input:       #FFFFFF;
+  --color-bg-hover:       #E9E6FB;
+
+  --color-border-subtle:  #E4E1F1;
+  --color-border-base:    #E4E1F1;
+  --color-border-strong:  #C9C6DA;
+
+  --color-text-primary:   #221F36;
+  --color-text-secondary: #6B6785;
+  --color-text-muted:     #A6A2BF;
+  --color-text-disabled:  #C9C6DA;
+
+  --color-brand-500:      #5B4FE0;
+  --color-brand-400:      #7B6FEF;
+  --color-brand-600:      #4238B8;
+  --color-brand-950:      #E9E6FB;
+  --color-brand-border:   #EFEDFA;
+
+  --color-mastery-500:    #E8A33D;
+  --color-mastery-400:    #E8A33D;
+  --color-mastery-950:    #FBEBD3;
+  --color-mastery-border: #D98324;
+
+  --color-streak-500:     #D98324;
+  --color-streak-400:     #E8A33D;
+  --color-streak-950:     #FBEBD3;
+  --color-streak-border:  #B4761F;
+
+  --color-xp-500:         #E8A33D;
+  --color-xp-400:         #E8A33D;
+
+  --color-success-500:    #2FA36B;
+  --color-success-400:    #2FA36B;
+  --color-success-950:    #E4F5EC;
+  --color-success-border: #2FA36B;
+
+  --color-danger-500:     #D84C4C;
+  --color-danger-400:     #EF6666;
+  --color-danger-950:     #FDE8E8;
+  --color-danger-border:  #B02020;
+
+  --color-hint-500:       #E8A33D;
+  --color-hint-400:       #D98324;
+  --color-hint-950:       #FBE9D6;
+  --color-hint-border:    #D98324;
+
+  --color-shield-400:     #5B4FE0;
+  --color-shield-950:     #E9E6FB;
+
+  /* Radius */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+}
+
+/* ── Dark theme ──────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  /* Core surfaces */
+  --color-surface:        #100F1E;
+  --color-card:           #1C1A30;
+  --color-ink:            #EDE9FF;
+  --color-muted:          #8F8BB5;
+  --color-faint:          #5C597F;
+  --color-disabled:       #3A3760;
+  --color-border:         #2E2C4A;
+  --color-surface-2:      #1A1830;
+  --color-surface-3:      #242240;
+  --color-surface-4:      #1E1C34;
+
+  /* Brand / Primary */
+  --color-primary:        #7B70F5;
+  --color-primary-dark:   #6356E0;
+
+  /* Amber */
+  --color-amber:          #F0AC43;
+  --color-amber-dark:     #E8923A;
+  --color-amber-darker:   #D98324;
+  --color-amber-tint:     #241A08;
+  --color-amber-tint-2:   #221808;
+
+  /* Success */
+  --color-success:        #3EC97E;
+  --color-success-tint:   #081A10;
+
+  /* Danger */
+  --color-danger:         #E06060;
+  --color-danger-tint:    #1F0A0A;
+
+  /* Connectors */
+  --color-connector:      #8078E0;
+  --color-locked-conn:    #2A2848;
+
+  /* Shadows */
+  --shadow-card:          0 1px 3px rgba(0,0,0,.4), 0 1px 2px rgba(0,0,0,.3);
+  --shadow-mastered:      0 6px 24px rgba(240,172,67,.5);
+  --shadow-glow-brand:    0 0 24px rgba(123,112,245,.35);
+  --shadow-glow-mastery:  0 0 24px rgba(240,172,67,.4);
+  --shadow-glow-streak:   0 0 24px rgba(232,146,58,.35);
+
+  /* ── Legacy aliases ── */
+  --color-bg-base:        #100F1E;
+  --color-bg-elevated:    #1C1A30;
+  --color-bg-card:        #1C1A30;
+  --color-bg-input:       #1C1A30;
+  --color-bg-hover:       #242240;
+
+  --color-border-subtle:  #2E2C4A;
+  --color-border-base:    #2E2C4A;
+  --color-border-strong:  #3A3760;
+
+  --color-text-primary:   #EDE9FF;
+  --color-text-secondary: #8F8BB5;
+  --color-text-muted:     #5C597F;
+  --color-text-disabled:  #3A3760;
+
+  --color-brand-500:      #7B70F5;
+  --color-brand-400:      #9088F8;
+  --color-brand-600:      #6356E0;
+  --color-brand-950:      #242240;
+  --color-brand-border:   #1A1830;
+
+  --color-mastery-500:    #F0AC43;
+  --color-mastery-400:    #F0AC43;
+  --color-mastery-950:    #241A08;
+  --color-mastery-border: #E8923A;
+
+  --color-streak-500:     #E8923A;
+  --color-streak-400:     #F0AC43;
+  --color-streak-950:     #241A08;
+  --color-streak-border:  #D98324;
+
+  --color-xp-500:         #F0AC43;
+  --color-xp-400:         #F0AC43;
+
+  --color-success-500:    #3EC97E;
+  --color-success-400:    #3EC97E;
+  --color-success-950:    #081A10;
+  --color-success-border: #3EC97E;
+
+  --color-danger-500:     #E06060;
+  --color-danger-400:     #EF7878;
+  --color-danger-950:     #1F0A0A;
+  --color-danger-border:  #C04040;
+
+  --color-hint-500:       #F0AC43;
+  --color-hint-400:       #E8923A;
+  --color-hint-950:       #221808;
+  --color-hint-border:    #E8923A;
+
+  --color-shield-400:     #7B70F5;
+  --color-shield-950:     #242240;
+}
+
+/* ── Tailwind theme bridge ────────────────────────────────────────── */
+@theme inline {
+  --color-background: var(--color-surface);
+  --color-foreground: var(--color-ink);
+  --font-sans: var(--font-jakarta), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), monospace;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+code, kbd, pre {
+  font-family: var(--font-jetbrains), monospace;
+}
+
+/* ── Focus visible ────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-faint); }
+
+/* ── Reduced motion ───────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Glow utilities ───────────────────────────────────────────────── */
+.glow-brand   { box-shadow: var(--shadow-glow-brand); }
+.glow-mastery { box-shadow: var(--shadow-glow-mastery); }
+.glow-streak  { box-shadow: var(--shadow-glow-streak); }
+
+/* ── Animations ───────────────────────────────────────────────────── */
+@keyframes flameFlicker {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50%       { transform: scale(1.08) rotate(-2deg); }
+}
+.flame-flicker {
+  animation: flameFlicker 1.8s ease-in-out infinite;
+}
+
+@keyframes connectorPulse {
+  0%, 100% { opacity: 0.35; }
+  50%       { opacity: 1; }
+}
+.connector-pulse {
+  animation: connectorPulse 2.2s ease-in-out infinite;
+}
+
+@keyframes xpFloat {
+  0%   { opacity: 0; transform: translateY(0) scale(.8); }
+  15%  { opacity: 1; transform: translateY(-4px) scale(1); }
+  100% { opacity: 0; transform: translateY(-54px) scale(1); }
+}
+
+@keyframes feedbackPop {
+  0%   { transform: scale(.9); opacity: 0; }
+  60%  { transform: scale(1.03); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.feedback-pop {
+  animation: feedbackPop 0.4s ease-out forwards;
+}
+
