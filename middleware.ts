@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { DEMO_MODE } from "@/lib/demo/config";
+import { DEMO_MODE } from "./lib/demo/config";
 
 export async function middleware(request: NextRequest) {
   // No Supabase configured — run wide open so the app can be reviewed
