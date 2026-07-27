@@ -101,7 +101,9 @@ export function SkillsTreeClient({ skills }: Props) {
   const byId = Object.fromEntries(skills.map((s) => [s.id, s]));
 
   const CANVAS_W = 760;
-  const CANVAS_H = 560;
+  // Bottom row sits at y=470; a node is a 64px circle plus a label that can
+  // wrap to two lines, so the canvas needs ~620px or those labels clip.
+  const CANVAS_H = 620;
 
   // Determine if an edge should pulse (leading into the currently active node selected)
   function shouldPulse(from: string, to: string): boolean {
