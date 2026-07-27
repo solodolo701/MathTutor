@@ -174,7 +174,7 @@ export function ProblemDisplay({ problem, onAnswer, disabled }: ProblemDisplayPr
                     setSelectedOption(label);
                     onAnswer(label);
                   }}
-                  className="p-4 rounded-xl border text-left transition-all disabled:opacity-50 hover:scale-[1.01]"
+                  className="hover-lift p-4 rounded-xl border text-left disabled:opacity-50"
                   style={{
                     background: isSelected ? "var(--color-brand-950)" : "var(--color-bg-input)",
                     borderColor: isSelected ? "var(--color-brand-500)" : "var(--color-border-base)",

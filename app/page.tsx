@@ -1,8 +1,14 @@
 import Link from "next/link";
 import { BookOpen, Zap, Bot, Trophy, Shield, Users } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { DEMO_MODE } from "@/lib/demo/config";
 
 export default function Home() {
+  // Without an auth backend, sending people to /signup is a dead end —
+  // point the calls to action straight into the app instead.
+  const enterHref = DEMO_MODE ? "/app/dashboard" : "/signup";
+  const enterLabel = DEMO_MODE ? "Demó indítása →" : "Ingyenes regisztráció →";
+
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "var(--color-bg-base)", color: "var(--color-text-primary)" }}>
       {/* Header */}
@@ -23,22 +29,24 @@ export default function Home() {
         </div>
         <div className="flex items-center gap-3">
           <ThemeToggle />
+          {!DEMO_MODE && (
+            <Link
+              href="/login"
+              className="px-4 py-2 text-sm font-medium transition-colors"
+              style={{ color: "var(--color-text-secondary)" }}
+            >
+              Bejelentkezés
+            </Link>
+          )}
           <Link
-            href="/login"
-            className="px-4 py-2 text-sm font-medium transition-colors"
-            style={{ color: "var(--color-text-secondary)" }}
-          >
-            Bejelentkezés
-          </Link>
-          <Link
-            href="/signup"
-            className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
+            href={enterHref}
+            className="hover-lift px-4 py-2 text-sm font-semibold rounded-lg"
             style={{
               background: "var(--color-brand-500)",
               color: "white",
             }}
           >
-            Ingyenes regisztráció →
+            {enterLabel}
           </Link>
         </div>
       </header>
@@ -79,27 +87,29 @@ export default function Home() {
 
             {/* Social proof */}
             <p className="text-sm mb-10" style={{ color: "var(--color-text-muted)" }}>
-              7 napos ingyenes prémium próba • Nem kell bankkártya • Azonnal elérhető
+              {DEMO_MODE
+                ? "Demó mód • Regisztráció nélkül kipróbálható • A haladás nem mentődik"
+                : "7 napos ingyenes prémium próba • Nem kell bankkártya • Azonnal elérhető"}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/signup"
-                className="px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
+                href={enterHref}
+                className="hover-lift px-8 py-4 rounded-xl font-semibold text-lg"
                 style={{ background: "var(--color-brand-500)", color: "white" }}
               >
-                Kezdj el ingyen →
+                {DEMO_MODE ? "Demó indítása →" : "Kezdj el ingyen →"}
               </Link>
               <Link
-                href="/login"
-                className="px-8 py-4 rounded-xl font-semibold text-lg transition-colors border"
+                href={DEMO_MODE ? "/app/skills" : "/login"}
+                className="hover-lift px-8 py-4 rounded-xl font-semibold text-lg border"
                 style={{
                   background: "var(--color-bg-card)",
                   borderColor: "var(--color-border-base)",
                   color: "var(--color-text-secondary)",
                 }}
               >
-                Van már fiókom
+                {DEMO_MODE ? "Készségfa megtekintése" : "Van már fiókom"}
               </Link>
             </div>
           </div>
@@ -169,7 +179,7 @@ export default function Home() {
               ].map((f) => (
                 <div
                   key={f.title}
-                  className="p-6 rounded-xl border transition-transform hover:scale-[1.02]"
+                  className="hover-lift p-6 rounded-xl border"
                   style={{ background: f.bg, borderColor: f.border }}
                 >
                   <div
@@ -258,14 +268,16 @@ export default function Home() {
               Kezdj el tanulni ma
             </h2>
             <p className="mb-8" style={{ color: "var(--color-text-secondary)" }}>
-              7 napos prémium próba, bankkártya nélkül.
+              {DEMO_MODE
+                ? "Nézz körül a demóban — fiók nélkül, azonnal."
+                : "7 napos prémium próba, bankkártya nélkül."}
             </p>
             <Link
-              href="/signup"
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:scale-[1.02]"
+              href={enterHref}
+              className="hover-lift inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-lg"
               style={{ background: "var(--color-brand-500)", color: "white" }}
             >
-              Ingyenes regisztráció →
+              {enterLabel}
             </Link>
           </div>
         </section>
