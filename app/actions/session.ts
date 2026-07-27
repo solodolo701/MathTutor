@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { updatePKnow, getNextReviewAt, calculateXP, DEFAULT_BKT_PARAMS } from "@/lib/bkt";
 import { buildDailySession, SessionProblem } from "@/lib/problem-selection";
+import { DEMO_MODE } from "@/lib/demo/config";
+import { demoState, findDemoProblem, getDemoUserSkill } from "@/lib/demo/data";
 
 export interface SubmitAnswerResult {
   correct: boolean;
@@ -16,6 +18,41 @@ export async function submitAnswer(
   userAnswer: string,
   timeMs: number
 ): Promise<SubmitAnswerResult> {
+  if (DEMO_MODE) {
+    const problem = findDemoProblem(problemId);
+    if (!problem) throw new Error("Problem not found");
+
+    let correct = false;
+    if (problem.type === "fill_number" && problem.solution_numeric !== null) {
+      const userNum = parseFloat(userAnswer.trim());
+      correct = Math.abs(userNum - problem.solution_numeric) < 0.001;
+    } else if (problem.solution_latex) {
+      correct = userAnswer.trim().toLowerCase() === problem.solution_latex.toLowerCase();
+    }
+
+    const current = getDemoUserSkill(problem.skill_id);
+    const newPKnow = updatePKnow(current.p_know, correct);
+    const nextReviewAt = getNextReviewAt(newPKnow);
+    const mastered = newPKnow >= 0.8 && !current.mastered_at;
+
+    demoState.userSkills.set(problem.skill_id, {
+      p_know: newPKnow,
+      attempts_total: current.attempts_total + 1,
+      attempts_correct: current.attempts_correct + (correct ? 1 : 0),
+      next_review_at: nextReviewAt.toISOString(),
+      mastered_at: mastered ? new Date().toISOString() : current.mastered_at,
+    });
+
+    const xpEarned = calculateXP(correct, problem.difficulty);
+    demoState.xpEvents.push({
+      amount: xpEarned,
+      reason: correct ? `correct_${problem.type}` : "effort",
+      created_at: new Date().toISOString(),
+    });
+
+    return { correct, xpEarned, newPKnow, mastered };
+  }
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
@@ -90,6 +127,9 @@ export async function startSession(userId: string): Promise<SessionProblem[]> {
 }
 
 export async function getSkillState(userId: string, skillId: string) {
+  if (DEMO_MODE) {
+    return getDemoUserSkill(skillId);
+  }
   const supabase = await createClient();
   const { data } = await supabase
     .from("user_skills")
@@ -101,6 +141,43 @@ export async function getSkillState(userId: string, skillId: string) {
 }
 
 export async function updateStreak(userId: string): Promise<{ current: number; newShield: boolean }> {
+  if (DEMO_MODE) {
+    const streak = demoState.streak;
+    const today = new Date().toISOString().split("T")[0];
+    const lastActive = streak.last_active_date;
+
+    if (lastActive === today) {
+      return { current: streak.current, newShield: false };
+    }
+
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+    let newCurrent: number;
+    let newShield = false;
+
+    if (lastActive === yesterday) {
+      newCurrent = streak.current + 1;
+    } else if (lastActive && streak.shields_available > 0) {
+      newCurrent = streak.current + 1;
+      streak.shields_available -= 1;
+    } else {
+      newCurrent = 1;
+    }
+
+    streak.longest = Math.max(newCurrent, streak.longest);
+
+    const shieldMilestones = [3, 7, 14, 30];
+    if (shieldMilestones.includes(newCurrent)) {
+      streak.shields_available += 1;
+      newShield = true;
+    }
+
+    streak.current = newCurrent;
+    streak.last_active_date = today;
+
+    return { current: newCurrent, newShield };
+  }
+
   const supabase = await createClient();
 
   const { data: streak } = await supabase

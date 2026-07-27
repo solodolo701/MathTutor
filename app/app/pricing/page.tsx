@@ -1,21 +1,26 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { DEMO_MODE } from "@/lib/demo/config";
 
 export default async function PricingPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  let isPremium = false;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("subscription_status")
-    .eq("id", user.id)
-    .single();
+  if (!DEMO_MODE) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) redirect("/login");
 
-  const isPremium = profile?.subscription_status === "premium";
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("subscription_status")
+      .eq("id", user.id)
+      .single();
+
+    isPremium = profile?.subscription_status === "premium";
+  }
 
   const features = [
     { free: "5 feladat/nap", premium: "Korlátlan napi feladatok" },

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { DEMO_MODE } from "@/lib/demo/config";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -18,7 +19,6 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   const age = CURRENT_YEAR - birthYear;
   const needsParentalConsent = age < 16;
@@ -41,6 +41,13 @@ export default function SignupPage() {
     setLoading(true);
     setError(null);
 
+    if (DEMO_MODE) {
+      router.push("/app/dashboard");
+      setLoading(false);
+      return;
+    }
+
+    const supabase = createClient();
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,

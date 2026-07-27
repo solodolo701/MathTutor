@@ -2,6 +2,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SkillsTreeClient } from "@/components/skills/SkillsTreeClient";
 import type { SkillNode } from "@/components/skills/SkillsTreeClient";
+import { DEMO_MODE } from "@/lib/demo/config";
+import { DEMO_SKILLS, demoState, getDemoUserSkill } from "@/lib/demo/data";
+import type { Skill } from "@/types/supabase";
 
 // Fixed layout positions matching the design prototype
 const SKILL_POSITIONS: Record<string, { x: number; y: number }> = {
@@ -24,20 +27,31 @@ function getDefaultPos(index: number): { x: number; y: number } {
 }
 
 export default async function SkillsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  let skills: Skill[];
+  let userSkillMap: Map<string, { p_know: number }>;
 
-  const [{ data: skills }, { data: userSkills }] = await Promise.all([
-    supabase.from("skills").select("*").order("sort_order"),
-    supabase.from("user_skills").select("*").eq("user_id", user.id),
-  ]);
+  if (DEMO_MODE) {
+    skills = DEMO_SKILLS;
+    userSkillMap = new Map(
+      Array.from(demoState.userSkills.keys()).map((skillId) => [skillId, getDemoUserSkill(skillId)])
+    );
+  } else {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) redirect("/login");
 
-  const userSkillMap = new Map(userSkills?.map((us) => [us.skill_id, us]) ?? []);
+    const [{ data: dbSkills }, { data: userSkills }] = await Promise.all([
+      supabase.from("skills").select("*").order("sort_order"),
+      supabase.from("user_skills").select("*").eq("user_id", user.id),
+    ]);
 
-  const skillNodes: SkillNode[] = (skills ?? []).map((s, index) => {
+    skills = dbSkills ?? [];
+    userSkillMap = new Map(userSkills?.map((us) => [us.skill_id, us]) ?? []);
+  }
+
+  const skillNodes: SkillNode[] = skills.map((s, index) => {
     const us = userSkillMap.get(s.id);
     const p_know = us?.p_know ?? 0;
     const pct = p_know;

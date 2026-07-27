@@ -1,15 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import Anthropic from "@anthropic-ai/sdk";
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+import { DEMO_MODE } from "@/lib/demo/config";
+import { findDemoProblem } from "@/lib/demo/data";
 
 const FREE_AI_HINTS_PER_DAY = 3;
 const PREMIUM_AI_HINTS_PER_DAY = 999;
 
 export async function POST(req: NextRequest) {
+  if (DEMO_MODE || !process.env.ANTHROPIC_API_KEY) {
+    const { problemId } = await req.json();
+    const problem = findDemoProblem(problemId);
+    const hints = (problem?.hints as Array<{ level: number; text_hu: string }> | null) ?? [];
+    const hint = hints[0]?.text_hu ?? "Nézd át újra a feladat lépéseit egyesével.";
+    return NextResponse.json({ hint });
+  }
+
+  const anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  });
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 

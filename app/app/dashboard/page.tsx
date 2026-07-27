@@ -1,32 +1,69 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import type { Skill } from "@/types/supabase";
+import { DEMO_MODE } from "@/lib/demo/config";
+import { DEMO_PROFILE, DEMO_SKILLS, demoState } from "@/lib/demo/data";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let displayName: string;
+  let totalWeekXp: number;
+  let masteredCount: number;
+  let totalSkillCount: number;
+  let streakDays: number;
+  let shieldsAvailable: number;
+  let dailySkillId: string;
+  let dailySkillName: string;
+  let questProgress: number;
 
-  if (!user) redirect("/login");
+  if (DEMO_MODE) {
+    const weekStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    displayName = DEMO_PROFILE.display_name;
+    totalWeekXp = demoState.xpEvents
+      .filter((e) => new Date(e.created_at) >= weekStart)
+      .reduce((sum, e) => sum + e.amount, 0);
+    const userSkillEntries = Array.from(demoState.userSkills.entries());
+    masteredCount = userSkillEntries.filter(([, us]) => us.p_know >= 0.8).length;
+    totalSkillCount = DEMO_SKILLS.length;
+    streakDays = demoState.streak.current;
+    shieldsAvailable = demoState.streak.shields_available;
 
-  const weekStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const inProgress = userSkillEntries.find(([, us]) => us.p_know > 0 && us.p_know < 0.8);
+    dailySkillId = inProgress?.[0] ?? DEMO_SKILLS[0].id;
+    dailySkillName = DEMO_SKILLS.find((s) => s.id === dailySkillId)?.name_hu ?? "Lineáris egyenletek";
+    questProgress = Math.min(userSkillEntries.length, 5);
+  } else {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  const [{ data: profile }, { data: userSkills }, { data: streak }, { data: weekXp }, { data: skills }] =
-    await Promise.all([
-      supabase.from("profiles").select("*").eq("id", user.id).single(),
-      supabase.from("user_skills").select("*").eq("user_id", user.id),
-      supabase.from("streaks").select("*").eq("user_id", user.id).single(),
-      supabase.from("xp_events").select("amount").eq("user_id", user.id).gte("created_at", weekStart),
-      supabase.from("skills").select("id, name_hu").limit(20),
-    ]);
+    if (!user) redirect("/login");
 
-  const totalWeekXp = weekXp?.reduce((sum, e) => sum + e.amount, 0) ?? 0;
-  const masteredCount = userSkills?.filter((us) => us.p_know >= 0.8).length ?? 0;
-  const totalSkillCount = skills?.length ?? 10;
-  const streakDays = streak?.current ?? 0;
-  const displayName = profile?.display_name ?? user.email?.split("@")[0] ?? "Tanuló";
+    const weekStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const [{ data: profile }, { data: userSkills }, { data: streak }, { data: weekXp }, { data: skills }] =
+      await Promise.all([
+        supabase.from("profiles").select("*").eq("id", user.id).single(),
+        supabase.from("user_skills").select("*").eq("user_id", user.id),
+        supabase.from("streaks").select("*").eq("user_id", user.id).single(),
+        supabase.from("xp_events").select("amount").eq("user_id", user.id).gte("created_at", weekStart),
+        supabase.from("skills").select("id, name_hu").limit(20),
+      ]);
+
+    totalWeekXp = weekXp?.reduce((sum, e) => sum + e.amount, 0) ?? 0;
+    masteredCount = userSkills?.filter((us) => us.p_know >= 0.8).length ?? 0;
+    totalSkillCount = skills?.length ?? 10;
+    streakDays = streak?.current ?? 0;
+    shieldsAvailable = streak?.shields_available ?? 0;
+    displayName = profile?.display_name ?? user.email?.split("@")[0] ?? "Tanuló";
+
+    dailySkillId = (userSkills ?? []).find((us) => us.p_know > 0 && us.p_know < 0.8)?.skill_id
+      ?? skills?.[0]?.id ?? "linear-equations";
+    dailySkillName =
+      skills?.find((s) => s.id === dailySkillId)?.name_hu ?? "Lineáris egyenletek";
+
+    questProgress = Math.min(userSkills?.length ?? 0, 5);
+  }
 
   // Build week dots: streak days elapsed this week (Mon–today)
   const today = new Date();
@@ -34,14 +71,6 @@ export default async function DashboardPage() {
   const weekDots = Array.from({ length: 7 }, (_, i) => ({
     filled: i <= weekDayIndex && streakDays > (weekDayIndex - i),
   }));
-
-  // Daily quest progress (mocked from real data)
-  const dailySkillId = (userSkills ?? []).find((us) => us.p_know > 0 && us.p_know < 0.8)?.skill_id
-    ?? skills?.[0]?.id ?? "linear-equations";
-  const dailySkillName =
-    skills?.find((s) => s.id === dailySkillId)?.name_hu ?? "Lineáris egyenletek";
-
-  const questProgress = Math.min(userSkills?.length ?? 0, 5);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -152,7 +181,7 @@ export default async function DashboardPage() {
           </div>
 
           {/* Shield footnote */}
-          {(streak?.shields_available ?? 0) > 0 && (
+          {shieldsAvailable > 0 && (
             <div
               style={{
                 display: "flex",
@@ -166,7 +195,7 @@ export default async function DashboardPage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 3l8 3v6c0 5-4 9-8 10C8 21 4 17 4 12V6l8-3z" />
               </svg>
-              {streak?.shields_available} sorozat-pajzsod van — egy kihagyott nap sem törli a sorozatot
+              {shieldsAvailable} sorozat-pajzsod van — egy kihagyott nap sem törli a sorozatot
             </div>
           )}
         </div>

@@ -1,7 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { DEMO_MODE } from "@/lib/demo/config";
 
 export async function middleware(request: NextRequest) {
+  // No Supabase configured — run wide open so the app can be reviewed
+  // without an auth backend.
+  if (DEMO_MODE) {
+    return NextResponse.next();
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(

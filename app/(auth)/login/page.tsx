@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { DEMO_MODE } from "@/lib/demo/config";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -11,13 +12,20 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
+    if (DEMO_MODE) {
+      router.push("/app/dashboard");
+      router.refresh();
+      setLoading(false);
+      return;
+    }
+
+    const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       setError("Hibás e-mail cím vagy jelszó.");
@@ -29,7 +37,12 @@ export default function LoginPage() {
   }
 
   async function handleGoogleLogin() {
+    if (DEMO_MODE) {
+      router.push("/app/dashboard");
+      return;
+    }
     setLoading(true);
+    const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback` },

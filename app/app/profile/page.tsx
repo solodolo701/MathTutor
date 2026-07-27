@@ -1,27 +1,53 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { hu } from "@/lib/i18n/hu";
+import { DEMO_MODE } from "@/lib/demo/config";
+import { DEMO_PROFILE, demoState } from "@/lib/demo/data";
 
 export default async function ProfilePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  let profile: { display_name: string; grade: number; subscription_status: string };
+  let email: string;
+  let totalXP: number;
+  let longestStreak: number;
+  let shieldsAvailable: number;
+  let earnedBadgeSet: Set<string>;
+  let badgeCount: number;
 
-  const [{ data: profile }, { data: badges }, { data: streak }, { data: xpTotal }] =
-    await Promise.all([
-      supabase.from("profiles").select("*").eq("id", user.id).single(),
-      supabase.from("badges").select("*").eq("user_id", user.id).order("earned_at"),
-      supabase.from("streaks").select("*").eq("user_id", user.id).single(),
-      supabase.from("xp_events").select("amount").eq("user_id", user.id),
-    ]);
+  if (DEMO_MODE) {
+    profile = DEMO_PROFILE;
+    email = "demo@matematikaokos.hu";
+    totalXP = demoState.xpEvents.reduce((sum, e) => sum + e.amount, 0);
+    longestStreak = demoState.streak.longest;
+    shieldsAvailable = demoState.streak.shields_available;
+    earnedBadgeSet = new Set();
+    badgeCount = 0;
+  } else {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) redirect("/login");
 
-  const totalXP = xpTotal?.reduce((sum, e) => sum + e.amount, 0) ?? 0;
+    const [{ data: dbProfile }, { data: badges }, { data: streak }, { data: xpTotal }] =
+      await Promise.all([
+        supabase.from("profiles").select("*").eq("id", user.id).single(),
+        supabase.from("badges").select("*").eq("user_id", user.id).order("earned_at"),
+        supabase.from("streaks").select("*").eq("user_id", user.id).single(),
+        supabase.from("xp_events").select("amount").eq("user_id", user.id),
+      ]);
+
+    profile = dbProfile ?? { display_name: "Tanuló", grade: 9, subscription_status: "free" };
+    email = user.email ?? "";
+    totalXP = xpTotal?.reduce((sum, e) => sum + e.amount, 0) ?? 0;
+    longestStreak = streak?.longest ?? 0;
+    shieldsAvailable = streak?.shields_available ?? 0;
+    earnedBadgeSet = new Set(badges?.map((b) => b.badge_type) ?? []);
+    badgeCount = badges?.length ?? 0;
+  }
+
   const level = Math.floor(totalXP / 500) + 1;
 
   const allBadgeTypes = Object.keys(hu.badges) as Array<keyof typeof hu.badges>;
-  const earnedBadgeSet = new Set(badges?.map((b) => b.badge_type) ?? []);
 
   const badgeIcons: Record<string, string> = {
     FIRST_SKILL_MASTERED: "🌟",
@@ -38,6 +64,10 @@ export default async function ProfilePage() {
 
   async function signOut() {
     "use server";
+    if (DEMO_MODE) {
+      redirect("/");
+      return;
+    }
     const supabase = await createClient();
     await supabase.auth.signOut();
     redirect("/login");
@@ -79,9 +109,9 @@ export default async function ProfilePage() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { icon: "🔥", label: "Legjobb sorozat", value: streak?.longest ?? 0 },
-          { icon: "🛡️", label: "Sorozatvédő", value: streak?.shields_available ?? 0 },
-          { icon: "🏅", label: "Kitüntetés", value: badges?.length ?? 0 },
+          { icon: "🔥", label: "Legjobb sorozat", value: longestStreak },
+          { icon: "🛡️", label: "Sorozatvédő", value: shieldsAvailable },
+          { icon: "🏅", label: "Kitüntetés", value: badgeCount },
         ].map((s) => (
           <div key={s.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-center">
             <div className="text-2xl mb-1">{s.icon}</div>
@@ -123,7 +153,7 @@ export default async function ProfilePage() {
         <h2 className="font-semibold text-white">Fiók</h2>
         <div className="flex justify-between text-sm">
           <span className="text-zinc-500">E-mail</span>
-          <span className="text-zinc-300">{user.email}</span>
+          <span className="text-zinc-300">{email}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-zinc-500">Előfizetés</span>

@@ -2,16 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-05-27.dahlia",
-});
-
 const PRICES = {
-  monthly: process.env.STRIPE_PRICE_MONTHLY!,
-  annual: process.env.STRIPE_PRICE_ANNUAL!,
+  monthly: process.env.STRIPE_PRICE_MONTHLY,
+  annual: process.env.STRIPE_PRICE_ANNUAL,
 };
 
 export async function GET(req: NextRequest) {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json(
+      { error: "Stripe is not configured on this deployment." },
+      { status: 503 }
+    );
+  }
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2026-05-27.dahlia",
+  });
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
