@@ -73,7 +73,7 @@ export default function Home() {
             >
               Okos matektanár
               <br />
-              <span style={{ color: "var(--color-brand-500)" }}>a zsebedben</span>
+              <span style={{ color: "var(--color-primary)" }}>a zsebedben</span>
             </h1>
 
             <p
@@ -129,7 +129,7 @@ export default function Home() {
               <div key={s.label}>
                 <div
                   className="text-2xl font-bold mb-1"
-                  style={{ color: "var(--color-brand-500)" }}
+                  style={{ color: "var(--color-primary)" }}
                 >
                   {s.value}
                 </div>
