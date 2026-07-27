@@ -77,28 +77,28 @@ export default async function ProfilePage() {
     <div className="space-y-8 max-w-2xl">
       {/* Profile header */}
       <div className="flex items-center gap-6">
-        <div className="w-20 h-20 rounded-full bg-indigo-700 flex items-center justify-center text-3xl font-bold text-white">
+        <div className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold" style={{ background: "var(--color-primary-solid)", color: "var(--color-on-primary)" }}>
           {profile?.display_name?.[0]?.toUpperCase() ?? "M"}
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-white">{profile?.display_name}</h1>
-          <p className="text-zinc-400">{profile?.grade}. osztály</p>
+          <h1 className="text-2xl font-bold text-[color:var(--color-ink)]">{profile?.display_name}</h1>
+          <p className="text-[color:var(--color-muted)]">{profile?.grade}. osztály</p>
           <div className="flex items-center gap-3 mt-2">
             <span className="px-2 py-0.5 bg-indigo-950 border border-indigo-800 text-indigo-400 text-xs rounded-full">
               {level}. szint
             </span>
-            <span className="text-zinc-500 text-sm">{totalXP} XP összesen</span>
+            <span className="text-[color:var(--color-muted)] text-sm">{totalXP} XP összesen</span>
           </div>
         </div>
       </div>
 
       {/* XP progress to next level */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-        <div className="flex justify-between text-sm text-zinc-400 mb-2">
+      <div className="bg-[color:var(--color-card)] border border-[color:var(--color-border)] rounded-xl p-4">
+        <div className="flex justify-between text-sm text-[color:var(--color-muted)] mb-2">
           <span>{level}. szint</span>
           <span>{totalXP % 500} / 500 XP a következő szintig</span>
         </div>
-        <div className="w-full bg-zinc-800 rounded-full h-3">
+        <div className="w-full bg-[color:var(--color-surface-2)] rounded-full h-3">
           <div
             className="bg-indigo-500 h-3 rounded-full transition-all"
             style={{ width: `${((totalXP % 500) / 500) * 100}%` }}
@@ -113,17 +113,17 @@ export default async function ProfilePage() {
           { icon: "🛡️", label: "Sorozatvédő", value: shieldsAvailable },
           { icon: "🏅", label: "Kitüntetés", value: badgeCount },
         ].map((s) => (
-          <div key={s.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-center">
+          <div key={s.label} className="bg-[color:var(--color-card)] border border-[color:var(--color-border)] rounded-xl p-4 text-center">
             <div className="text-2xl mb-1">{s.icon}</div>
-            <div className="text-xl font-bold text-white">{s.value}</div>
-            <div className="text-xs text-zinc-500 mt-1">{s.label}</div>
+            <div className="text-xl font-bold text-[color:var(--color-ink)]">{s.value}</div>
+            <div className="text-xs text-[color:var(--color-muted)] mt-1">{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Badges */}
       <div>
-        <h2 className="text-lg font-semibold text-white mb-4">Kitüntetések</h2>
+        <h2 className="text-lg font-semibold text-[color:var(--color-ink)] mb-4">Kitüntetések</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {allBadgeTypes.map((badgeType) => {
             const earned = earnedBadgeSet.has(badgeType);
@@ -133,13 +133,13 @@ export default async function ProfilePage() {
                 className={`p-4 rounded-xl border text-center transition-all ${
                   earned
                     ? "bg-yellow-950 border-yellow-700"
-                    : "bg-zinc-900 border-zinc-800 opacity-40"
+                    : "bg-[color:var(--color-card)] border-[color:var(--color-border)] opacity-40"
                 }`}
               >
                 <div className="text-3xl mb-2">
                   {earned ? badgeIcons[badgeType] : "🔒"}
                 </div>
-                <div className="text-xs font-medium text-white">
+                <div className="text-xs font-medium text-[color:var(--color-ink)]">
                   {hu.badges[badgeType]}
                 </div>
               </div>
@@ -149,19 +149,19 @@ export default async function ProfilePage() {
       </div>
 
       {/* Account info */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
-        <h2 className="font-semibold text-white">Fiók</h2>
+      <div className="bg-[color:var(--color-card)] border border-[color:var(--color-border)] rounded-xl p-4 space-y-3">
+        <h2 className="font-semibold text-[color:var(--color-ink)]">Fiók</h2>
         <div className="flex justify-between text-sm">
-          <span className="text-zinc-500">E-mail</span>
-          <span className="text-zinc-300">{email}</span>
+          <span className="text-[color:var(--color-muted)]">E-mail</span>
+          <span className="text-[color:var(--color-ink)]">{email}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-zinc-500">Előfizetés</span>
-          <span className={profile?.subscription_status === "premium" ? "text-indigo-400" : "text-zinc-400"}>
+          <span className="text-[color:var(--color-muted)]">Előfizetés</span>
+          <span className={profile?.subscription_status === "premium" ? "text-indigo-400" : "text-[color:var(--color-muted)]"}>
             {profile?.subscription_status === "premium" ? "Prémium" : "Ingyenes"}
           </span>
         </div>
-        <div className="pt-2 border-t border-zinc-800">
+        <div className="pt-2 border-t border-[color:var(--color-border)]">
           <form action={signOut}>
             <button
               type="submit"

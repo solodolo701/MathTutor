@@ -7,9 +7,18 @@
   --color-surface:        #F5F4FB;
   --color-card:           #FFFFFF;
   --color-ink:            #221F36;
-  --color-muted:          #6B6785;
-  --color-faint:          #A6A2BF;
+  /* Text tones are tuned to clear 4.5:1 on --color-surface (#F5F4FB),
+     which is the least forgiving background they sit on. */
+  --color-muted:          #56536E;
+  --color-faint:          #6B6785;
   --color-disabled:       #C9C6DA;
+
+  /* Solid button pairs. Never build a button from a text token: those
+     invert between themes and strand the label at ~1:1. */
+  --color-primary-solid:  #5B4FE0;
+  --color-on-primary:     #FFFFFF;
+  --color-neutral-solid:  #221F36;
+  --color-on-neutral:     #FFFFFF;
   --color-border:         #E4E1F1;
   --color-surface-2:      #EFEDFA;
   --color-surface-3:      #E9E6FB;
@@ -112,9 +121,16 @@
   --color-surface:        #100F1E;
   --color-card:           #1C1A30;
   --color-ink:            #EDE9FF;
-  --color-muted:          #8F8BB5;
-  --color-faint:          #5C597F;
+  /* Lightened so both clear 4.5:1 on --color-card (#1C1A30). */
+  --color-muted:          #A8A4C8;
+  --color-faint:          #8F8BB5;
   --color-disabled:       #3A3760;
+
+  /* The neutral button inverts in dark mode: light fill, dark label. */
+  --color-primary-solid:  #5B4FE0;
+  --color-on-primary:     #FFFFFF;
+  --color-neutral-solid:  #EDE9FF;
+  --color-on-neutral:     #100F1E;
   --color-border:         #2E2C4A;
   --color-surface-2:      #1A1830;
   --color-surface-3:      #242240;
