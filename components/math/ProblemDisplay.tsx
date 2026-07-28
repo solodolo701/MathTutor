@@ -14,8 +14,6 @@ interface ProblemDisplayProps {
   disabled?: boolean;
   /** Drives the input's border/affordance colour. */
   status?: AnswerStatus;
-  /** Bump to clear the field and pull focus back (new problem, or a retry). */
-  resetKey?: number;
 }
 
 function normalizeNumber(raw: string): string {
@@ -39,29 +37,22 @@ function difficultyLabel(d: number): { text: string; level: number } {
   return { text: "Nehéz", level: 3 };
 }
 
-export function ProblemDisplay({
-  problem,
-  onAnswer,
-  disabled,
-  status = "idle",
-  resetKey = 0,
-}: ProblemDisplayProps) {
+export function ProblemDisplay({ problem, onAnswer, disabled, status = "idle" }: ProblemDisplayProps) {
   const [textInput, setTextInput] = useState("");
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const reduce = useReducedMotion();
 
-  // Clear the field and take focus whenever the parent starts a fresh attempt:
-  // a new problem, or the student choosing to retry the current one. Keeping
-  // this on an explicit key (rather than `disabled`) means the answer they
-  // typed stays on screen while they read the feedback about it.
+  // The parent remounts this component (via `key`) whenever a fresh attempt
+  // starts — a new problem, or the student choosing to retry the current one —
+  // so the field starts empty by construction rather than being cleared by an
+  // effect. That also means the answer they typed stays on screen for as long
+  // as the feedback about it does.
   useEffect(() => {
-    setTextInput("");
-    setSelectedOption(null);
     const t = setTimeout(() => inputRef.current?.focus(), 60);
     return () => clearTimeout(t);
-  }, [resetKey, problem.id]);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import katex from "katex";
 
 interface MathDisplayProps {
@@ -18,6 +18,7 @@ export function MathDisplay({ latex, displayMode = false, className }: MathDispl
       katex.render(latex, ref.current, {
         displayMode,
         throwOnError: false,
+        strict: false,
         output: "html",
       });
     } catch {
@@ -31,6 +32,14 @@ export function MathDisplay({ latex, displayMode = false, className }: MathDispl
       role="math"
       aria-label={latex}
       className={className}
+      // KaTeX inherits colour, so formulas always match the surrounding text
+      // token. Long expressions scroll inside themselves instead of forcing
+      // the card (and the page) to scroll horizontally.
+      style={
+        displayMode
+          ? { display: "block", overflowX: "auto", overflowY: "hidden", maxWidth: "100%" }
+          : undefined
+      }
     />
   );
 }
@@ -40,21 +49,24 @@ export function MathBlock({ latex, className }: { latex: string; className?: str
 }
 
 /**
- * Renders prose that contains inline `$…$` math — problem statements and
- * hints are both written that way. Without this the raw LaTeX, dollar
- * signs and all, is shown to the student.
+ * Renders prose that contains inline `$…$` or block `$$…$$` math — problem
+ * statements and hints are both written that way. Without this the raw LaTeX,
+ * dollar signs and all, is shown to the student.
  */
 export function MathText({ text }: { text: string }) {
-  const parts = text.split(/(\$[^$]+\$)/g);
+  const parts = useMemo(() => text.split(/(\$\$[^$]+\$\$|\$[^$]+\$)/g), [text]);
+
   return (
     <>
-      {parts.map((part, i) =>
-        part.startsWith("$") && part.endsWith("$") ? (
-          <MathDisplay key={i} latex={part.slice(1, -1)} />
-        ) : (
-          <span key={i}>{part}</span>
-        )
-      )}
+      {parts.map((part, i) => {
+        if (part.startsWith("$$") && part.endsWith("$$") && part.length > 4) {
+          return <MathDisplay key={i} latex={part.slice(2, -2)} displayMode />;
+        }
+        if (part.startsWith("$") && part.endsWith("$") && part.length > 2) {
+          return <MathDisplay key={i} latex={part.slice(1, -1)} />;
+        }
+        return <span key={i}>{part}</span>;
+      })}
     </>
   );
 }
