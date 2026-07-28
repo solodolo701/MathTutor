@@ -314,7 +314,14 @@ export default async function DashboardPage() {
             ))}
           </div>
 
-          {/* Shield footnote */}
+          {/* Shield footnote — or, with no shields, what today's round buys */}
+          {shieldsAvailable === 0 && (
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-muted)" }}>
+              {streakDays > 0
+                ? `Gyakorolj ma is, és holnap ${streakDays + 1} napos lesz a sorozatod.`
+                : "Az első kör után indul a sorozatod — utána már csak tartani kell."}
+            </div>
+          )}
           {shieldsAvailable > 0 && (
             <div
               style={{

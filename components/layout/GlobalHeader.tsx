@@ -160,7 +160,7 @@ export function GlobalHeader({
             padding: "8px 14px",
             borderRadius: 999,
             fontWeight: 700,
-            color: "var(--color-primary-dark)",
+            color: "var(--color-ink)",
             fontSize: 14,
             whiteSpace: "nowrap",
           }}
