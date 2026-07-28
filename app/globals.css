@@ -113,6 +113,36 @@
   --radius-md:  10px;
   --radius-lg:  14px;
   --radius-xl:  20px;
+
+  /* ── Motion: easing tokens ────────────────────────────────────────
+     Pick by intent, not by taste:
+       out-soft   — the default. Things entering or responding to input.
+       out-expo   — long travel that must feel like it "arrives" (drawers).
+       in-soft    — things leaving the screen entirely.
+       in-out     — loops and reversible states (pulses, theme swaps).
+       spring     — a single controlled overshoot. Never on a loop.
+     Motion tokens are theme-independent and live only in :root. */
+  --ease-out-soft:  cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-out-expo:  cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-soft:   cubic-bezier(0.55, 0.06, 0.68, 0.19);
+  --ease-in-out:    cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  --ease-spring:    cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ── Motion: duration tokens ──────────────────────────────────────
+       instant — state flips that should read as immediate (press).
+       fast    — hover, focus, small colour/shadow changes.
+       base    — the default for entrances and most transitions.
+       slow    — larger surfaces, modals, page-level entrances.
+       slower  — celebratory / one-off flourishes only. */
+  --dur-instant: 90ms;
+  --dur-fast:    150ms;
+  --dur-base:    240ms;
+  --dur-slow:    380ms;
+  --dur-slower:  620ms;
+
+  /* Distance an entrance travels, and the gap between staggered items. */
+  --motion-rise:   10px;
+  --stagger-step:  55ms;
 }
 
 /* ── Dark theme ──────────────────────────────────────────────────── */
@@ -254,6 +284,25 @@ code, kbd, pre {
   outline-offset: 2px;
 }
 
+/* Opt-in polish for interactive elements: the ring fades in and is backed
+   by a soft halo so it stays legible on both card and tinted surfaces.
+   The outline itself is never animated in width — only the halo — so the
+   focus indicator is at full contrast on frame one (WCAG 2.4.11/2.4.13). */
+.focus-ring {
+  transition: box-shadow var(--dur-fast) var(--ease-out-soft),
+              border-color var(--dur-fast) var(--ease-out-soft);
+}
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  box-shadow: var(--shadow-glow-brand);
+}
+/* Inset variant for controls flush against a container edge. */
+.focus-ring-inset:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
 /* ── Scrollbar ────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -261,12 +310,21 @@ code, kbd, pre {
 ::-webkit-scrollbar-thumb:hover { background: var(--color-faint); }
 
 /* ── Reduced motion ───────────────────────────────────────────────── */
+/* Blanket neutraliser. Every entrance keyframe below ends on its resting
+   frame (opacity 1, no offset) and uses fill-mode forwards, so collapsing
+   the duration lands the element in its final state rather than hiding it.
+   Anything that cannot be handled by collapsing duration alone gets an
+   explicit override in the second block further down. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
   }
+  html { scroll-behavior: auto; }
 }
 
 /* ── Glow utilities ───────────────────────────────────────────────── */
@@ -280,9 +338,11 @@ code, kbd, pre {
    bitmap, which visibly blurs text and borders while hovered. Translating
    by a whole pixel moves the same raster and stays sharp. */
 .hover-lift {
-  transition: transform 0.18s ease, box-shadow 0.18s ease,
-              background-color 0.18s ease, border-color 0.18s ease,
-              color 0.18s ease;
+  transition: transform var(--dur-fast) var(--ease-out-soft),
+              box-shadow var(--dur-fast) var(--ease-out-soft),
+              background-color var(--dur-fast) var(--ease-out-soft),
+              border-color var(--dur-fast) var(--ease-out-soft),
+              color var(--dur-fast) var(--ease-out-soft);
 }
 .hover-lift:hover {
   transform: translateY(-2px);
@@ -291,7 +351,7 @@ code, kbd, pre {
 .hover-lift:active {
   transform: translateY(0);
   box-shadow: var(--shadow-card);
-  transition-duration: 0.08s;
+  transition-duration: var(--dur-instant);
 }
 /* Disabled controls must not respond to hover at all. */
 .hover-lift:disabled:hover,
@@ -336,6 +396,333 @@ code, kbd, pre {
   100% { opacity: 1; transform: translateY(0); }
 }
 .feedback-pop {
-  animation: feedbackPop 0.4s ease-out forwards;
+  animation: feedbackPop var(--dur-slow) var(--ease-out-soft) forwards;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   MOTION SYSTEM
+   Compose screens from the utilities below rather than writing new
+   one-off keyframes. Two rules govern everything here:
+
+   1. Text never scales. `transform: scale()` rasterises an element at
+      its natural size and resamples that bitmap, which visibly blurs
+      glyphs and hairline borders for the whole animation. Every
+      entrance, press and celebration utility uses translate + opacity
+      + box-shadow instead. The only scaling utilities are `.pop-icon`
+      and `.mastery-burst`, both explicitly for pure-shape/icon nodes.
+   2. Colour comes from tokens only, so both themes track automatically.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Entrance keyframes ───────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(var(--motion-rise)); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(calc(var(--motion-rise) * -1)); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInLeft {
+  from { opacity: 0; transform: translateX(calc(var(--motion-rise) * -1)); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(var(--motion-rise)); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Shape-only. Do not put text inside an element using this. */
+@keyframes popIcon {
+  0%   { opacity: 0; transform: scale(0.6); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ── Entrance utilities ───────────────────────────────────────────── */
+/* All are fill-mode both: the element is invisible before it starts
+   (so a stagger delay does not flash unstyled content) and holds its
+   resting frame afterwards. */
+.anim-fade-in,
+.anim-fade-up,
+.anim-fade-down,
+.anim-fade-left,
+.anim-fade-right,
+.pop-icon {
+  animation-duration: var(--dur-base);
+  animation-timing-function: var(--ease-out-soft);
+  animation-fill-mode: both;
+}
+
+.anim-fade-in    { animation-name: fadeIn; }
+.anim-fade-up    { animation-name: fadeUp; }
+.anim-fade-down  { animation-name: fadeDown; }
+.anim-fade-left  { animation-name: fadeInLeft; }
+.anim-fade-right { animation-name: fadeInRight; }
+
+/* Icons, dots, badges, medals — anything with no glyphs in it. */
+.pop-icon {
+  animation-name: popIcon;
+  animation-timing-function: var(--ease-spring);
+}
+
+/* Duration overrides, usable on any of the above. */
+.anim-fast   { animation-duration: var(--dur-fast); }
+.anim-slow   { animation-duration: var(--dur-slow); }
+.anim-slower { animation-duration: var(--dur-slower); }
+
+/* ── Stagger ──────────────────────────────────────────────────────── */
+/* Explicit, for hand-placed elements. */
+.stagger-1 { animation-delay: calc(var(--stagger-step) * 1); }
+.stagger-2 { animation-delay: calc(var(--stagger-step) * 2); }
+.stagger-3 { animation-delay: calc(var(--stagger-step) * 3); }
+.stagger-4 { animation-delay: calc(var(--stagger-step) * 4); }
+.stagger-5 { animation-delay: calc(var(--stagger-step) * 5); }
+.stagger-6 { animation-delay: calc(var(--stagger-step) * 6); }
+.stagger-7 { animation-delay: calc(var(--stagger-step) * 7); }
+.stagger-8 { animation-delay: calc(var(--stagger-step) * 8); }
+
+/* Index-driven, for mapped lists: style={{ '--i': index }} on the child.
+   Caps the ramp at 12 steps so a 200-row list does not take 11 seconds. */
+.stagger-index {
+  animation-delay: calc(var(--stagger-step) * min(var(--i, 0), 12));
+}
+
+/* Container form: children animate themselves in order, no per-item
+   class needed. Covers the first 10 children. */
+.stagger-children > * { animation-delay: 0ms; }
+.stagger-children > *:nth-child(1)  { animation-delay: calc(var(--stagger-step) * 0); }
+.stagger-children > *:nth-child(2)  { animation-delay: calc(var(--stagger-step) * 1); }
+.stagger-children > *:nth-child(3)  { animation-delay: calc(var(--stagger-step) * 2); }
+.stagger-children > *:nth-child(4)  { animation-delay: calc(var(--stagger-step) * 3); }
+.stagger-children > *:nth-child(5)  { animation-delay: calc(var(--stagger-step) * 4); }
+.stagger-children > *:nth-child(6)  { animation-delay: calc(var(--stagger-step) * 5); }
+.stagger-children > *:nth-child(7)  { animation-delay: calc(var(--stagger-step) * 6); }
+.stagger-children > *:nth-child(8)  { animation-delay: calc(var(--stagger-step) * 7); }
+.stagger-children > *:nth-child(9)  { animation-delay: calc(var(--stagger-step) * 8); }
+.stagger-children > *:nth-child(n+10) { animation-delay: calc(var(--stagger-step) * 9); }
+
+/* ── Interactive feedback ─────────────────────────────────────────── */
+/* Press feedback with no lift — for elements already flush with the page
+   (nav items, chips, list rows). Pairs with .hover-lift's vocabulary. */
+.press-feedback {
+  transition: transform var(--dur-fast) var(--ease-out-soft),
+              background-color var(--dur-fast) var(--ease-out-soft),
+              box-shadow var(--dur-fast) var(--ease-out-soft),
+              opacity var(--dur-fast) var(--ease-out-soft);
+}
+.press-feedback:active {
+  transform: translateY(1px);
+  transition-duration: var(--dur-instant);
+}
+.press-feedback:disabled,
+.press-feedback[aria-disabled="true"] {
+  transform: none;
+  opacity: 0.6;
+}
+.press-feedback:disabled:active,
+.press-feedback[aria-disabled="true"]:active { transform: none; }
+
+/* Interactive surface: hover tint + press, without displacing the box.
+   Safe on text-heavy rows since nothing moves the raster. */
+.interactive-surface {
+  transition: background-color var(--dur-fast) var(--ease-out-soft),
+              border-color var(--dur-fast) var(--ease-out-soft),
+              color var(--dur-fast) var(--ease-out-soft),
+              box-shadow var(--dur-fast) var(--ease-out-soft);
+}
+.interactive-surface:hover { background-color: var(--color-surface-3); }
+.interactive-surface:active {
+  background-color: var(--color-surface-2);
+  transition-duration: var(--dur-instant);
+}
+
+/* Generic transition helpers for one-off cases. */
+.transition-fast { transition: all var(--dur-fast) var(--ease-out-soft); }
+.transition-base { transition: all var(--dur-base) var(--ease-out-soft); }
+.transition-slow { transition: all var(--dur-slow) var(--ease-out-expo); }
+
+/* ── Loading: skeleton + shimmer ──────────────────────────────────── */
+@keyframes skeletonSheen {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
+
+/* Block-level placeholder. Give it a width/height (or let it fill) and
+   a radius utility. Mark the container aria-busy="true" and hide the
+   skeletons from AT — they carry no information. */
+.skeleton {
+  background-color: var(--color-surface-3);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-surface-2) 20%,
+    var(--color-card) 50%,
+    var(--color-surface-2) 80%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  border-radius: var(--radius-md);
+  animation: skeletonSheen 1.6s var(--ease-in-out) infinite;
+  /* Placeholders must never be mistaken for content. */
+  color: transparent;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Single line of fake text; stack a few with different widths. */
+.skeleton-text {
+  height: 0.85em;
+  border-radius: var(--radius-sm);
+}
+
+/* Cheaper variant for large areas, and the fallback when the sheen would
+   be distracting: opacity only. */
+.skeleton-pulse {
+  background-color: var(--color-surface-3);
+  border-radius: var(--radius-md);
+  animation: skeletonPulse 1.8s var(--ease-in-out) infinite;
+}
+
+/* Sheen overlay for a real (non-placeholder) element that is refreshing.
+   Applies to the ::after layer so the element's own content stays put. */
+.shimmer { position: relative; overflow: hidden; }
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-surface-3) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  opacity: 0.6;
+  animation: skeletonSheen 1.6s var(--ease-in-out) infinite;
+  pointer-events: none;
+}
+
+/* Indeterminate progress bar fill — pure shape, safe to scale. */
+@keyframes progressIndeterminate {
+  0%   { transform: translateX(-100%) scaleX(0.35); }
+  50%  { transform: translateX(0%)    scaleX(0.55); }
+  100% { transform: translateX(200%)  scaleX(0.35); }
+}
+.progress-indeterminate {
+  transform-origin: left center;
+  animation: progressIndeterminate 1.4s var(--ease-in-out) infinite;
+}
+
+/* Determinate progress width changes should ease, not snap. */
+.progress-fill {
+  transition: width var(--dur-slow) var(--ease-out-expo),
+              background-color var(--dur-base) var(--ease-out-soft);
+}
+
+/* ── Celebration: skill mastered ──────────────────────────────────── */
+/* Ring of amber light that swells then settles on the mastered shadow.
+   Shadow-only, so it is safe on a card that contains the skill name. */
+@keyframes masteryGlow {
+  0%   { box-shadow: 0 0 0 0 var(--color-mastery-950); }
+  35%  { box-shadow: var(--shadow-glow-mastery), var(--shadow-mastered); }
+  100% { box-shadow: var(--shadow-mastered); }
+}
+
+/* A slow, quiet breath for a card that is already mastered — this one
+   loops, so it stays subtle: opacity of the halo only. */
+@keyframes masteryBreathe {
+  0%, 100% { box-shadow: var(--shadow-card); }
+  50%      { box-shadow: var(--shadow-glow-mastery); }
+}
+
+/* One-shot expanding ring. Put this on an empty absolutely-positioned
+   element behind the card — it scales, so it must contain no text. */
+@keyframes masteryBurst {
+  0%   { opacity: 0.7; transform: scale(0.85); }
+  100% { opacity: 0;   transform: scale(1.5); }
+}
+
+/* Fire once when p_know crosses the mastery threshold. */
+.mastery-celebrate {
+  animation: masteryGlow var(--dur-slower) var(--ease-out-expo) forwards;
+}
+/* Persistent ambient state for an already-mastered node. */
+.mastery-breathe {
+  animation: masteryBreathe 3.2s var(--ease-in-out) infinite;
+}
+/* Decorative ring. Requires aria-hidden="true" and no children. */
+.mastery-burst {
+  border-radius: inherit;
+  background: var(--color-mastery-950);
+  border: 2px solid var(--color-mastery-500);
+  animation: masteryBurst var(--dur-slower) var(--ease-out-expo) forwards;
+  pointer-events: none;
+}
+
+/* Text that arrives with the celebration: rises and brightens, no scale. */
+@keyframes masteryRise {
+  0%   { opacity: 0; transform: translateY(8px); }
+  55%  { opacity: 1; transform: translateY(-2px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.mastery-rise {
+  animation: masteryRise var(--dur-slow) var(--ease-spring) both;
+}
+
+/* ── Reduced motion: explicit overrides ───────────────────────────── */
+/* The blanket rule above collapses durations, which is enough for
+   entrances and loops. These cases need more: transforms that would
+   otherwise be applied by :hover/:active state (no animation to
+   shorten), and looping decoration that should simply not run. */
+@media (prefers-reduced-motion: reduce) {
+  .hover-lift:hover,
+  .hover-lift:active,
+  .press-feedback:active,
+  .mastery-burst,
+  .progress-indeterminate {
+    transform: none;
+  }
+
+  /* Looping ambience carries no information — stop it entirely and hold
+     a static resting appearance. */
+  .flame-flicker,
+  .connector-pulse,
+  .mastery-breathe,
+  .progress-indeterminate,
+  .shimmer::after {
+    animation: none !important;
+  }
+  .connector-pulse { opacity: 1; }
+  .shimmer::after  { display: none; }
+
+  /* Skeletons keep a single static tone rather than sweeping. */
+  .skeleton,
+  .skeleton-pulse {
+    animation: none !important;
+    background-image: none;
+    background-color: var(--color-surface-3);
+    opacity: 1;
+  }
+
+  /* An indeterminate bar with no motion reads as "stuck", so show it as
+     a static partial fill instead. */
+  .progress-indeterminate { width: 40%; opacity: 1; }
+
+  /* Mastery still needs to register — keep the shadow, drop the swell. */
+  .mastery-celebrate { box-shadow: var(--shadow-mastered); }
 }
 
