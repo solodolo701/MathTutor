@@ -3,14 +3,43 @@ import { BookOpen, Zap, Bot, Trophy, Shield, Users } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { DEMO_MODE } from "@/lib/demo/config";
 
+/* Page-scoped motion. Everything here is switched off under
+   prefers-reduced-motion; nothing scales, so type never resamples. */
+const LANDING_CSS = `
+@keyframes lpRise {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.lp-rise {
+  animation: lpRise .6s cubic-bezier(.16,1,.3,1) both;
+  animation-delay: var(--d, 0s);
+}
+@keyframes lpGlow {
+  0%, 100% { opacity: .5; }
+  50%      { opacity: .85; }
+}
+.lp-glow { animation: lpGlow 7s ease-in-out infinite; }
+.lp-cta .lp-arrow { transition: transform .18s ease; display: inline-block; }
+.lp-cta:hover .lp-arrow { transform: translateX(4px); }
+.lp-step-num { transition: box-shadow .18s ease; }
+.lp-card:hover .lp-step-num { box-shadow: var(--shadow-glow-brand); }
+@media (prefers-reduced-motion: reduce) {
+  .lp-rise { animation: none; opacity: 1; transform: none; }
+  .lp-glow { animation: none; }
+  .lp-cta:hover .lp-arrow { transform: none; }
+}
+`;
+
 export default function Home() {
   // Without an auth backend, sending people to /signup is a dead end —
   // point the calls to action straight into the app instead.
   const enterHref = DEMO_MODE ? "/app/dashboard" : "/signup";
-  const enterLabel = DEMO_MODE ? "Demó indítása →" : "Ingyenes regisztráció →";
+  const enterLabel = DEMO_MODE ? "Demó indítása" : "Ingyenes regisztráció";
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "var(--color-bg-base)", color: "var(--color-text-primary)" }}>
+      <style dangerouslySetInnerHTML={{ __html: LANDING_CSS }} />
+
       {/* Header */}
       <header
         className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 backdrop-blur-md border-b"
@@ -19,9 +48,9 @@ export default function Home() {
         <div className="flex items-center gap-2.5">
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: "var(--color-brand-500)" }}
+            style={{ background: "var(--color-primary-solid)", color: "var(--color-on-primary)" }}
           >
-            <BookOpen size={16} className="text-white" />
+            <BookOpen size={16} />
           </div>
           <span className="font-bold text-lg" style={{ color: "var(--color-text-primary)" }}>
             MatematikaOkos
@@ -40,23 +69,33 @@ export default function Home() {
           )}
           <Link
             href={enterHref}
-            className="hover-lift px-4 py-2 text-sm font-semibold rounded-lg"
+            className="hover-lift lp-cta px-4 py-2 text-sm font-semibold rounded-lg"
             style={{
-              background: "var(--color-brand-500)",
-              color: "white",
+              background: "var(--color-primary-solid)",
+              color: "var(--color-on-primary)",
             }}
           >
-            {enterLabel}
+            {enterLabel} <span className="lp-arrow">→</span>
           </Link>
         </div>
       </header>
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="flex flex-col items-center justify-center px-6 pt-24 pb-20 text-center">
-          <div className="max-w-3xl">
+        <section className="relative flex flex-col items-center justify-center px-6 pt-24 pb-20 text-center overflow-hidden">
+          {/* Soft brand glow — decorative shape behind the headline */}
+          <div
+            aria-hidden
+            className="lp-glow pointer-events-none absolute left-1/2 -translate-x-1/2 -top-24 w-[680px] h-[420px] max-w-full"
+            style={{
+              background:
+                "radial-gradient(closest-side, var(--color-brand-950), transparent 78%)",
+            }}
+          />
+
+          <div className="relative max-w-3xl">
             <div
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm mb-8 border"
+              className="lp-rise inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm mb-8 border"
               style={{
                 background: "var(--color-brand-950)",
                 borderColor: "var(--color-brand-border)",
@@ -68,8 +107,8 @@ export default function Home() {
             </div>
 
             <h1
-              className="text-5xl sm:text-6xl font-bold tracking-tight mb-6 leading-[1.1]"
-              style={{ color: "var(--color-text-primary)" }}
+              className="lp-rise text-5xl sm:text-6xl font-bold tracking-tight mb-6 leading-[1.1]"
+              style={{ "--d": ".08s", color: "var(--color-text-primary)" } as React.CSSProperties}
             >
               Okos matektanár
               <br />
@@ -77,8 +116,8 @@ export default function Home() {
             </h1>
 
             <p
-              className="text-xl mb-4 leading-relaxed max-w-2xl mx-auto"
-              style={{ color: "var(--color-text-secondary)" }}
+              className="lp-rise text-xl mb-4 leading-relaxed max-w-2xl mx-auto"
+              style={{ "--d": ".16s", color: "var(--color-text-secondary)" } as React.CSSProperties}
             >
               Adaptív feladatsor, AI segítség és játékosított tanulás —
               kifejezetten magyar középiskolásoknak. Felkészítés az érettségire
@@ -86,19 +125,26 @@ export default function Home() {
             </p>
 
             {/* Social proof */}
-            <p className="text-sm mb-10" style={{ color: "var(--color-text-muted)" }}>
+            <p
+              className="lp-rise text-sm mb-10"
+              style={{ "--d": ".22s", color: "var(--color-text-muted)" } as React.CSSProperties}
+            >
               {DEMO_MODE
                 ? "Demó mód • Regisztráció nélkül kipróbálható • A haladás nem mentődik"
                 : "7 napos ingyenes prémium próba • Nem kell bankkártya • Azonnal elérhető"}
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div
+              className="lp-rise flex flex-col sm:flex-row gap-4 justify-center"
+              style={{ "--d": ".28s" } as React.CSSProperties}
+            >
               <Link
                 href={enterHref}
-                className="hover-lift px-8 py-4 rounded-xl font-semibold text-lg"
-                style={{ background: "var(--color-brand-500)", color: "white" }}
+                className="hover-lift lp-cta px-8 py-4 rounded-xl font-semibold text-lg"
+                style={{ background: "var(--color-primary-solid)", color: "var(--color-on-primary)" }}
               >
-                {DEMO_MODE ? "Demó indítása →" : "Kezdj el ingyen →"}
+                {DEMO_MODE ? "Demó indítása" : "Kezdj el ingyen"}{" "}
+                <span className="lp-arrow">→</span>
               </Link>
               <Link
                 href={DEMO_MODE ? "/app/skills" : "/login"}
@@ -125,8 +171,12 @@ export default function Home() {
               { value: "500+", label: "Feladat" },
               { value: "9–10.", label: "Évfolyam" },
               { value: "NAT 2020", label: "Tanterv" },
-            ].map((s) => (
-              <div key={s.label}>
+            ].map((s, i) => (
+              <div
+                key={s.label}
+                className="lp-rise"
+                style={{ "--d": `${0.34 + i * 0.07}s` } as React.CSSProperties}
+              >
                 <div
                   className="text-2xl font-bold mb-1"
                   style={{ color: "var(--color-primary)" }}
@@ -156,7 +206,7 @@ export default function Home() {
                   Icon: Bot,
                   title: "AI segítség",
                   desc: "Elakadtál? A Claude AI-alapú tanár Szókratészi módszerrel vezet rá a megoldásra — magyarul.",
-                  accent: "var(--color-brand-400)",
+                  accent: "var(--color-primary)",
                   bg: "var(--color-brand-950)",
                   border: "var(--color-brand-border)",
                 },
@@ -164,7 +214,7 @@ export default function Home() {
                   Icon: Zap,
                   title: "Adaptív tanulás",
                   desc: "A Bayes-féle tudáskövetés alapján pontosan azt gyakorolod, amire a legtöbbet fejlődsz.",
-                  accent: "var(--color-xp-400)",
+                  accent: "var(--color-amber-darker)",
                   bg: "var(--color-mastery-950)",
                   border: "var(--color-mastery-border)",
                 },
@@ -172,15 +222,21 @@ export default function Home() {
                   Icon: Trophy,
                   title: "Játékosított élmény",
                   desc: "XP, sorozatok, kitüntetések és csapatok — a matektanulás élménnyé válik.",
-                  accent: "var(--color-mastery-400)",
+                  accent: "var(--color-amber-darker)",
                   bg: "var(--color-mastery-950)",
                   border: "var(--color-mastery-border)",
                 },
-              ].map((f) => (
+              ].map((f, i) => (
                 <div
                   key={f.title}
-                  className="hover-lift p-6 rounded-xl border"
-                  style={{ background: f.bg, borderColor: f.border }}
+                  className="hover-lift lp-rise p-6 rounded-xl border"
+                  style={
+                    {
+                      "--d": `${i * 0.08}s`,
+                      background: f.bg,
+                      borderColor: f.border,
+                    } as React.CSSProperties
+                  }
                 >
                   <div
                     className="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
@@ -216,8 +272,10 @@ export default function Home() {
               {[
                 {
                   step: "1",
-                  title: "Regisztrálj",
-                  desc: "Válaszd ki az évfolyamot, és indulj el — 2 perc alatt.",
+                  title: DEMO_MODE ? "Lépj be a demóba" : "Regisztrálj",
+                  desc: DEMO_MODE
+                    ? "Nincs fiók, nincs bankkártya — egy kattintás, és bent vagy."
+                    : "Válaszd ki az évfolyamot, és indulj el — 2 perc alatt.",
                   Icon: Users,
                 },
                 {
@@ -232,15 +290,21 @@ export default function Home() {
                   desc: "Kövesd a tudásnövekedésed képességenként, gyűjts XP-t és jelvényeket.",
                   Icon: Shield,
                 },
-              ].map((s) => (
+              ].map((s, i) => (
                 <div
                   key={s.step}
-                  className="flex gap-4 p-5 rounded-xl border"
-                  style={{ background: "var(--color-bg-card)", borderColor: "var(--color-border-base)" }}
+                  className="hover-lift lp-rise lp-card flex gap-4 p-5 rounded-xl border"
+                  style={
+                    {
+                      "--d": `${i * 0.08}s`,
+                      background: "var(--color-bg-card)",
+                      borderColor: "var(--color-border-base)",
+                    } as React.CSSProperties
+                  }
                 >
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 font-bold text-sm"
-                    style={{ background: "var(--color-brand-500)", color: "white" }}
+                    className="lp-step-num w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 font-bold text-sm"
+                    style={{ background: "var(--color-primary-solid)", color: "var(--color-on-primary)" }}
                   >
                     {s.step}
                   </div>
@@ -263,7 +327,7 @@ export default function Home() {
 
         {/* CTA */}
         <section className="px-6 py-20 text-center">
-          <div className="max-w-lg mx-auto">
+          <div className="lp-rise max-w-lg mx-auto">
             <h2 className="text-3xl font-bold mb-4" style={{ color: "var(--color-text-primary)" }}>
               Kezdj el tanulni ma
             </h2>
@@ -274,10 +338,10 @@ export default function Home() {
             </p>
             <Link
               href={enterHref}
-              className="hover-lift inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-lg"
-              style={{ background: "var(--color-brand-500)", color: "white" }}
+              className="hover-lift lp-cta inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-lg"
+              style={{ background: "var(--color-primary-solid)", color: "var(--color-on-primary)" }}
             >
-              {enterLabel}
+              {enterLabel} <span className="lp-arrow">→</span>
             </Link>
           </div>
         </section>

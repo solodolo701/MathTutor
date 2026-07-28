@@ -4,6 +4,40 @@ import { createClient } from "@/lib/supabase/server";
 import { DEMO_MODE } from "@/lib/demo/config";
 import { DEMO_PROFILE, DEMO_SKILLS, demoState } from "@/lib/demo/data";
 
+/* Page-scoped motion. Kept here (not in globals.css) so this file owns its
+   own choreography, and every rule is disabled under prefers-reduced-motion. */
+const DASH_CSS = `
+@keyframes dashRise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.dash-rise {
+  animation: dashRise .5s cubic-bezier(.16,1,.3,1) both;
+  animation-delay: var(--d, 0s);
+}
+@keyframes dashGrow { from { width: 0; } }
+.dash-bar {
+  animation: dashGrow .9s cubic-bezier(.16,1,.3,1) both;
+  animation-delay: var(--d, .25s);
+}
+@keyframes dashDot {
+  from { opacity: 0; transform: scale(.3); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.dash-dot {
+  animation: dashDot .38s cubic-bezier(.34,1.56,.64,1) both;
+  animation-delay: var(--d, 0s);
+}
+.dash-cta svg { transition: transform .18s ease; }
+.dash-cta:hover svg { transform: translateX(3px); }
+.dash-quest { transition: background .18s ease, border-color .18s ease; }
+.dash-quest:hover { background: var(--color-surface-2); }
+@media (prefers-reduced-motion: reduce) {
+  .dash-rise, .dash-bar, .dash-dot { animation: none; opacity: 1; transform: none; }
+  .dash-cta:hover svg { transform: none; }
+}
+`;
+
 export default async function DashboardPage() {
   let displayName: string;
   let totalWeekXp: number;
@@ -68,51 +102,121 @@ export default async function DashboardPage() {
   // Build week dots: streak days elapsed this week (Mon–today)
   const today = new Date();
   const weekDayIndex = (today.getDay() + 6) % 7; // 0=Mon, 6=Sun
+  const WEEKDAY_LABELS = ["H", "K", "Sze", "Cs", "P", "Szo", "V"];
   const weekDots = Array.from({ length: 7 }, (_, i) => ({
     filled: i <= weekDayIndex && streakDays > (weekDayIndex - i),
+    isToday: i === weekDayIndex,
+    isFuture: i > weekDayIndex,
+    label: WEEKDAY_LABELS[i],
   }));
+
+  const masteryPct = totalSkillCount > 0 ? Math.round((masteredCount / totalSkillCount) * 100) : 0;
+  const seasonMilestones = masteredCount * 2;
+  const seasonPct = Math.min(Math.round((seasonMilestones / 30) * 100), 100);
+
+  const greeting =
+    streakDays > 0
+      ? `Ma is tartod a sorozatot — ${streakDays}. nap. Egy rövid kör, és megvan.`
+      : "Egy 15 perces kör most elindítja a sorozatodat.";
+
+  const quests = [
+    {
+      label: "Oldj meg 5 lineáris egyenletet",
+      done: questProgress,
+      total: 5,
+      accent: "var(--color-primary)",
+      iconPath: "M9 12l2 2 4-4",
+    },
+    {
+      label: "Segíts egy csapattársnak egy tippel",
+      done: 0,
+      total: 1,
+      accent: "var(--color-amber-darker)",
+      iconPath: "M12 2l2 7h7l-6 4 2 7-5-4-5 4 2-7-6-4h7z",
+    },
+    {
+      label: "Fejezz be egy teljes napi gyakorlást",
+      done: masteredCount > 0 ? 1 : 0,
+      total: 1,
+      accent: "var(--color-success)",
+      iconPath: "M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0",
+    },
+  ];
+
+  const questsDone = quests.filter((q) => q.done >= q.total).length;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <style dangerouslySetInnerHTML={{ __html: DASH_CSS }} />
+
       {/* Greeting */}
-      <div style={{ fontSize: 26, fontWeight: 800, color: "var(--color-ink)" }}>
-        Szia, {displayName}! Készen állsz a mai adagra?
+      <div className="dash-rise">
+        <h1 style={{ fontSize: 26, fontWeight: 800, color: "var(--color-ink)", margin: 0 }}>
+          Szia, {displayName}!
+        </h1>
+        <p style={{ fontSize: 15, color: "var(--color-muted)", margin: "6px 0 0" }}>
+          {greeting}
+        </p>
       </div>
 
       {/* Hero row */}
       <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 20 }}>
-        {/* Task card */}
+        {/* Task card — the single most important action on the page */}
         <div
-          style={{
-            background: "linear-gradient(135deg,#5B4FE0,#4238B8)",
-            borderRadius: 20,
-            padding: 28,
-            color: "#fff",
-            display: "flex",
-            flexDirection: "column",
-            gap: 14,
-          }}
+          className="dash-rise"
+          style={
+            {
+              "--d": ".06s",
+              background:
+                "linear-gradient(135deg, var(--color-primary-solid), var(--color-primary-dark))",
+              borderRadius: 20,
+              padding: 28,
+              color: "var(--color-on-primary)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 14,
+              boxShadow: "var(--shadow-card)",
+              position: "relative",
+              overflow: "hidden",
+            } as React.CSSProperties
+          }
         >
+          {/* Decorative depth — pure shape, no text on top of it */}
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              right: -60,
+              top: -70,
+              width: 220,
+              height: 220,
+              borderRadius: "50%",
+              background: "var(--color-on-primary)",
+              opacity: 0.07,
+              pointerEvents: "none",
+            }}
+          />
           <div
             style={{
               fontSize: 13,
               fontWeight: 700,
               textTransform: "uppercase",
               letterSpacing: ".06em",
-              opacity: 0.8,
+              opacity: 0.85,
             }}
           >
             Mai feladat
           </div>
           <div style={{ fontSize: 24, fontWeight: 800 }}>{dailySkillName}</div>
-          <div style={{ fontSize: 14, opacity: 0.85 }}>7 feladat · kb. 15 perc</div>
+          <div style={{ fontSize: 14, opacity: 0.9 }}>7 feladat · kb. 15 perc · +70 XP</div>
           <Link
             href={`/app/practice/${dailySkillId}`}
+            className="dash-cta hover-lift"
             style={{
               alignSelf: "flex-start",
               marginTop: 6,
-              background: "#fff",
-              color: "#4238B8",
+              background: "var(--color-on-primary)",
+              color: "var(--color-primary-solid)",
               border: "none",
               padding: "12px 22px",
               borderRadius: 12,
@@ -134,15 +238,19 @@ export default async function DashboardPage() {
 
         {/* Streak card */}
         <div
-          style={{
-            background: "var(--color-card)",
-            border: "1px solid var(--color-border)",
-            borderRadius: 20,
-            padding: 24,
-            display: "flex",
-            flexDirection: "column",
-            gap: 12,
-          }}
+          className="dash-rise"
+          style={
+            {
+              "--d": ".12s",
+              background: "var(--color-card)",
+              border: "1px solid var(--color-border)",
+              borderRadius: 20,
+              padding: 24,
+              display: "flex",
+              flexDirection: "column",
+              gap: 14,
+            } as React.CSSProperties
+          }
         >
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <svg
@@ -150,11 +258,12 @@ export default async function DashboardPage() {
               height="22"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#D98324"
+              stroke="var(--color-amber-darker)"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
               className="flame-flicker"
+              style={{ flexShrink: 0 }}
             >
               <path d="M12 3c1 3-3 4-3 8a3 3 0 0 0 6 0c0-2-1-3-1-4 2 1 3 3 3 5a5 5 0 0 1-10 0c0-4 3-6 5-9z" />
             </svg>
@@ -163,20 +272,45 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {/* Week dots */}
-          <div style={{ display: "flex", gap: 6 }}>
+          {/* Week dots — labelled so the row reads as a calendar, not decoration */}
+          <div style={{ display: "flex", gap: 8 }}>
             {weekDots.map((dot, i) => (
               <div
                 key={i}
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: "50%",
-                  background: dot.filled ? "var(--color-amber)" : "transparent",
-                  border: `2px solid ${dot.filled ? "var(--color-amber)" : "var(--color-border)"}`,
-                  flexShrink: 0,
-                }}
-              />
+                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}
+              >
+                <div
+                  className="dash-dot"
+                  title={dot.filled ? "Teljesítve" : dot.isFuture ? "Még hátra van" : "Kihagyva"}
+                  style={
+                    {
+                      "--d": `${0.2 + i * 0.06}s`,
+                      width: 24,
+                      height: 24,
+                      borderRadius: "50%",
+                      background: dot.filled ? "var(--color-amber)" : "transparent",
+                      border: `2px solid ${
+                        dot.filled
+                          ? "var(--color-amber)"
+                          : dot.isToday
+                            ? "var(--color-primary)"
+                            : "var(--color-border)"
+                      }`,
+                      boxShadow: dot.isToday ? "var(--shadow-glow-streak)" : "none",
+                      flexShrink: 0,
+                    } as React.CSSProperties
+                  }
+                />
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: dot.isToday ? "var(--color-primary)" : "var(--color-faint)",
+                  }}
+                >
+                  {dot.label}
+                </span>
+              </div>
             ))}
           </div>
 
@@ -192,7 +326,7 @@ export default async function DashboardPage() {
                 color: "var(--color-muted)",
               }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                 <path d="M12 3l8 3v6c0 5-4 9-8 10C8 21 4 17 4 12V6l8-3z" />
               </svg>
               {shieldsAvailable} sorozat-pajzsod van — egy kihagyott nap sem törli a sorozatot
@@ -204,18 +338,37 @@ export default async function DashboardPage() {
       {/* Stat row */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
         {[
-          { label: "Elsajátított készségek", value: `${masteredCount} / ${totalSkillCount}` },
-          { label: "Heti XP", value: totalWeekXp },
-          { label: "Csapat helyezés", value: "#3" },
-        ].map((stat) => (
+          {
+            label: "Elsajátított készségek",
+            value: `${masteredCount} / ${totalSkillCount}`,
+            pct: masteryPct,
+            barColor: "var(--color-amber)",
+          },
+          {
+            label: "Heti XP",
+            value: totalWeekXp,
+            pct: Math.min(Math.round((totalWeekXp / 500) * 100), 100),
+            barColor: "var(--color-primary)",
+          },
+          {
+            label: "Csapat helyezés",
+            value: "#3",
+            pct: null,
+            barColor: "var(--color-primary)",
+          },
+        ].map((stat, i) => (
           <div
             key={stat.label}
-            style={{
-              background: "var(--color-card)",
-              border: "1px solid var(--color-border)",
-              borderRadius: 16,
-              padding: 18,
-            }}
+            className="dash-rise"
+            style={
+              {
+                "--d": `${0.18 + i * 0.06}s`,
+                background: "var(--color-card)",
+                border: "1px solid var(--color-border)",
+                borderRadius: 16,
+                padding: 18,
+              } as React.CSSProperties
+            }
           >
             <div
               style={{
@@ -234,74 +387,95 @@ export default async function DashboardPage() {
                 fontWeight: 800,
                 color: "var(--color-ink)",
                 marginTop: 4,
+                fontVariantNumeric: "tabular-nums",
               }}
             >
               {stat.value}
             </div>
+            {stat.pct !== null && (
+              <div
+                style={{
+                  height: 5,
+                  background: "var(--color-surface-2)",
+                  borderRadius: 3,
+                  overflow: "hidden",
+                  marginTop: 10,
+                }}
+              >
+                <div
+                  className="dash-bar"
+                  style={
+                    {
+                      "--d": `${0.35 + i * 0.06}s`,
+                      height: "100%",
+                      width: `${stat.pct}%`,
+                      background: stat.barColor,
+                      borderRadius: 3,
+                    } as React.CSSProperties
+                  }
+                />
+              </div>
+            )}
           </div>
         ))}
       </div>
 
       {/* Daily quests */}
       <div
-        style={{
-          background: "var(--color-card)",
-          border: "1px solid var(--color-border)",
-          borderRadius: 20,
-          padding: 24,
-        }}
+        className="dash-rise"
+        style={
+          {
+            "--d": ".36s",
+            background: "var(--color-card)",
+            border: "1px solid var(--color-border)",
+            borderRadius: 20,
+            padding: 24,
+          } as React.CSSProperties
+        }
       >
-        <div style={{ fontSize: 16, fontWeight: 800, color: "var(--color-ink)", marginBottom: 14 }}>
-          Napi küldetések
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            marginBottom: 14,
+            gap: 12,
+          }}
+        >
+          <h2 style={{ fontSize: 16, fontWeight: 800, color: "var(--color-ink)", margin: 0 }}>
+            Napi küldetések
+          </h2>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--color-muted)" }}>
+            {questsDone}/{quests.length} kész
+          </span>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {[
-            {
-              label: "Oldj meg 5 lineáris egyenletet",
-              done: questProgress,
-              total: 5,
-              iconBg: "#E9E6FB",
-              iconColor: "var(--color-primary)",
-              iconPath: "M9 12l2 2 4-4",
-            },
-            {
-              label: "Segíts egy csapattársnak egy tippel",
-              done: 0,
-              total: 1,
-              iconBg: "#FBEBD3",
-              iconColor: "var(--color-amber)",
-              iconPath: "M12 2l2 7h7l-6 4 2 7-5-4-5 4 2-7-6-4h7z",
-            },
-            {
-              label: "Fejezz be egy teljes napi gyakorlást",
-              done: masteredCount > 0 ? 1 : 0,
-              total: 1,
-              iconBg: "#E4F5EC",
-              iconColor: "var(--color-success)",
-              iconPath: "M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0",
-            },
-          ].map((quest) => {
+          {quests.map((quest, i) => {
+            const complete = quest.done >= quest.total;
             const pct = Math.round((quest.done / quest.total) * 100);
             return (
               <div
                 key={quest.label}
+                className="dash-quest"
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 14,
                   background: "var(--color-surface)",
+                  border: `1px solid ${complete ? "var(--color-success)" : "transparent"}`,
                   borderRadius: 12,
                   padding: "12px 14px",
                 }}
               >
-                {/* Icon chip */}
+                {/* Icon chip — accent on card so the mark keeps 3:1 in both themes */}
                 <div
                   style={{
                     width: 34,
                     height: 34,
                     borderRadius: 10,
-                    background: quest.iconBg,
-                    color: quest.iconColor,
+                    background: "var(--color-card)",
+                    border: `1.5px solid ${quest.accent}`,
+                    color: quest.accent,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -318,15 +492,18 @@ export default async function DashboardPage() {
                   <div style={{ fontSize: 14, fontWeight: 700, color: "var(--color-ink)", marginBottom: 6 }}>
                     {quest.label}
                   </div>
-                  <div style={{ height: 6, background: "var(--color-border)", borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{ height: 6, background: "var(--color-surface-2)", borderRadius: 4, overflow: "hidden" }}>
                     <div
-                      style={{
-                        height: "100%",
-                        width: `${pct}%`,
-                        background: "var(--color-primary)",
-                        borderRadius: 4,
-                        transition: "width 0.4s ease-out",
-                      }}
+                      className="dash-bar"
+                      style={
+                        {
+                          "--d": `${0.5 + i * 0.08}s`,
+                          height: "100%",
+                          width: `${pct}%`,
+                          background: complete ? "var(--color-success)" : "var(--color-primary)",
+                          borderRadius: 4,
+                        } as React.CSSProperties
+                      }
                     />
                   </div>
                 </div>
@@ -336,10 +513,19 @@ export default async function DashboardPage() {
                   style={{
                     fontSize: 13,
                     fontWeight: 700,
-                    color: "var(--color-muted)",
+                    color: complete ? "var(--color-success)" : "var(--color-muted)",
                     flexShrink: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontVariantNumeric: "tabular-nums",
                   }}
                 >
+                  {complete && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
                   {quest.done}/{quest.total}
                 </div>
               </div>
@@ -350,12 +536,16 @@ export default async function DashboardPage() {
 
       {/* Season progress */}
       <div
-        style={{
-          background: "var(--color-card)",
-          border: "1px solid var(--color-border)",
-          borderRadius: 20,
-          padding: 24,
-        }}
+        className="dash-rise"
+        style={
+          {
+            "--d": ".42s",
+            background: "var(--color-card)",
+            border: "1px solid var(--color-border)",
+            borderRadius: 20,
+            padding: 24,
+          } as React.CSSProperties
+        }
       >
         <div
           style={{
@@ -363,13 +553,14 @@ export default async function DashboardPage() {
             justifyContent: "space-between",
             alignItems: "baseline",
             marginBottom: 12,
+            gap: 12,
           }}
         >
-          <div style={{ fontSize: 16, fontWeight: 800, color: "var(--color-ink)" }}>
+          <h2 style={{ fontSize: 16, fontWeight: 800, color: "var(--color-ink)", margin: 0 }}>
             Egyenletek Kora — szezon
-          </div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-muted)" }}>
-            {masteredCount * 2} / 30 mérföldkő
+          </h2>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-muted)", fontVariantNumeric: "tabular-nums" }}>
+            {seasonMilestones} / 30 mérföldkő
           </div>
         </div>
         <div
@@ -381,15 +572,21 @@ export default async function DashboardPage() {
           }}
         >
           <div
-            style={{
-              height: "100%",
-              width: `${Math.min(Math.round((masteredCount * 2 / 30) * 100), 100)}%`,
-              background: "linear-gradient(90deg,#E8A33D,#5B4FE0)",
-              borderRadius: 6,
-              transition: "width 0.4s ease-out",
-            }}
+            className="dash-bar"
+            style={
+              {
+                "--d": ".55s",
+                height: "100%",
+                width: `${seasonPct}%`,
+                background: "linear-gradient(90deg, var(--color-amber), var(--color-primary))",
+                borderRadius: 6,
+              } as React.CSSProperties
+            }
           />
         </div>
+        <p style={{ fontSize: 12, color: "var(--color-faint)", margin: "8px 0 0" }}>
+          Minden elsajátított készség 2 mérföldkövet ad a szezonban.
+        </p>
       </div>
     </div>
   );
