@@ -1,4 +1,5 @@
 import { getDictionary } from "@/lib/i18n";
+import { t } from "@/lib/i18n/t";
 import { isLocale } from "@/lib/i18n/config";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
@@ -95,7 +96,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
     totalSkillCount = skills?.length ?? 10;
     streakDays = streak?.current ?? 0;
     shieldsAvailable = streak?.shields_available ?? 0;
-    displayName = profile?.display_name ?? user.email?.split("@")[0] ?? "Tanuló";
+    displayName = profile?.display_name ?? user.email?.split("@")[0] ?? dict.dashboard.defaultName;
 
     dailySkillId = (userSkills ?? []).find((us) => us.p_know > 0 && us.p_know < 0.8)?.skill_id
       ?? skills?.[0]?.id ?? "linear-equations";
@@ -108,7 +109,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
   // Build week dots: streak days elapsed this week (Mon–today)
   const today = new Date();
   const weekDayIndex = (today.getDay() + 6) % 7; // 0=Mon, 6=Sun
-  const WEEKDAY_LABELS = ["H", "K", "Sze", "Cs", "P", "Szo", "V"];
+  const WEEKDAY_LABELS = dict.dashboard.weekdays;
   const weekDots = Array.from({ length: 7 }, (_, i) => ({
     filled: i <= weekDayIndex && streakDays > (weekDayIndex - i),
     isToday: i === weekDayIndex,
@@ -122,26 +123,26 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
 
   const greeting =
     streakDays > 0
-      ? `Ma is tartod a sorozatot — ${streakDays}. nap. Egy rövid kör, és megvan.`
-      : "Egy 15 perces kör most elindítja a sorozatodat.";
+      ? t(dict.dashboard.subWithStreak, { days: streakDays })
+      : dict.dashboard.subNoStreak;
 
   const quests = [
     {
-      label: "Oldj meg 5 lineáris egyenletet",
+      label: dict.dashboard.quest1,
       done: questProgress,
       total: 5,
       accent: "var(--color-primary)",
       iconPath: "M9 12l2 2 4-4",
     },
     {
-      label: "Segíts egy csapattársnak egy tippel",
+      label: dict.dashboard.quest2,
       done: 0,
       total: 1,
       accent: "var(--color-amber-darker)",
       iconPath: "M12 2l2 7h7l-6 4 2 7-5-4-5 4 2-7-6-4h7z",
     },
     {
-      label: "Fejezz be egy teljes napi gyakorlást",
+      label: dict.dashboard.quest3,
       done: masteredCount > 0 ? 1 : 0,
       total: 1,
       accent: "var(--color-success)",
@@ -158,7 +159,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
       {/* Greeting */}
       <div className="dash-rise">
         <h1 style={{ fontSize: 26, fontWeight: 800, color: "var(--color-ink)", margin: 0 }}>
-          Szia, {displayName}!
+          {t(dict.dashboard.greeting, { name: displayName })}
         </h1>
         <p style={{ fontSize: 15, color: "var(--color-muted)", margin: "6px 0 0" }}>
           {greeting}
@@ -211,10 +212,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
               opacity: 0.85,
             }}
           >
-            Mai feladat
+            {dict.dashboard.todayTask}
           </div>
           <div style={{ fontSize: 24, fontWeight: 800 }}>{dailySkillName}</div>
-          <div style={{ fontSize: 14, opacity: 0.9 }}>7 feladat · kb. 15 perc · +70 XP</div>
+          <div style={{ fontSize: 14, opacity: 0.9 }}>{dict.dashboard.taskMetaFull}</div>
           <Link
             href={`/${lang}/app/practice/${dailySkillId}`}
             className="dash-cta hover-lift"
@@ -235,7 +236,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
               textDecoration: "none",
             }}
           >
-            Gyakorlás indítása
+            {dict.dashboard.startPractice}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 5l7 7-7 7" />
             </svg>
@@ -287,7 +288,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
               >
                 <div
                   className="dash-dot"
-                  title={dot.filled ? "Teljesítve" : dot.isFuture ? "Még hátra van" : "Kihagyva"}
+                  title={dot.filled ? dict.dashboard.dotDone : dot.isFuture ? dict.dashboard.dotFuture : dict.dashboard.dotMissed}
                   style={
                     {
                       "--d": `${0.2 + i * 0.06}s`,
@@ -324,8 +325,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
           {shieldsAvailable === 0 && (
             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-muted)" }}>
               {streakDays > 0
-                ? `Gyakorolj ma is, és holnap ${streakDays + 1} napos lesz a sorozatod.`
-                : "Az első kör után indul a sorozatod — utána már csak tartani kell."}
+                ? t(dict.dashboard.streakTomorrow, { next: streakDays + 1 })
+                : dict.dashboard.streakFirst}
             </div>
           )}
           {shieldsAvailable > 0 && (
@@ -342,7 +343,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                 <path d="M12 3l8 3v6c0 5-4 9-8 10C8 21 4 17 4 12V6l8-3z" />
               </svg>
-              {shieldsAvailable} sorozat-pajzsod van — egy kihagyott nap sem törli a sorozatot
+              {t(dict.dashboard.streakShield, { n: shieldsAvailable })}
             </div>
           )}
         </div>
@@ -352,19 +353,19 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
         {[
           {
-            label: "Elsajátított készségek",
+            label: dict.dashboard.statMastered,
             value: `${masteredCount} / ${totalSkillCount}`,
             pct: masteryPct,
             barColor: "var(--color-amber)",
           },
           {
-            label: "Heti XP",
+            label: dict.dashboard.statWeeklyXp,
             value: totalWeekXp,
             pct: Math.min(Math.round((totalWeekXp / 500) * 100), 100),
             barColor: "var(--color-primary)",
           },
           {
-            label: "Csapat helyezés",
+            label: dict.dashboard.statRank,
             value: "#3",
             pct: null,
             barColor: "var(--color-primary)",
@@ -456,10 +457,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
           }}
         >
           <h2 style={{ fontSize: 16, fontWeight: 800, color: "var(--color-ink)", margin: 0 }}>
-            Napi küldetések
+            {dict.dashboard.questsTitle}
           </h2>
           <span style={{ fontSize: 13, fontWeight: 600, color: "var(--color-muted)" }}>
-            {questsDone}/{quests.length} kész
+            {t(dict.dashboard.questsDone, { done: questsDone, total: quests.length })}
           </span>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -570,10 +571,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
           }}
         >
           <h2 style={{ fontSize: 16, fontWeight: 800, color: "var(--color-ink)", margin: 0 }}>
-            Egyenletek Kora — szezon
+            {dict.dashboard.seasonTitle}
           </h2>
           <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-muted)", fontVariantNumeric: "tabular-nums" }}>
-            {seasonMilestones} / 30 mérföldkő
+            {t(dict.dashboard.seasonMilestones, { done: seasonMilestones, total: 30 })}
           </div>
         </div>
         <div
@@ -598,7 +599,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
           />
         </div>
         <p style={{ fontSize: 12, color: "var(--color-faint)", margin: "8px 0 0" }}>
-          Minden elsajátított készség 2 mérföldkövet ad a szezonban.
+          {dict.dashboard.seasonNote}
         </p>
       </div>
     </div>
