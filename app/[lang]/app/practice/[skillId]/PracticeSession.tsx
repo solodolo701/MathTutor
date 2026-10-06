@@ -1,6 +1,8 @@
 "use client";
 
 import type { Locale } from "@/lib/i18n/config";
+import type { Dictionary } from "@/lib/i18n/dictionaries/hu";
+import { t } from "@/lib/i18n/t";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -12,6 +14,7 @@ import { submitAnswer, updateStreak } from "@/app/actions/session";
 
 interface Props {
   lang: Locale;
+  dict: Dictionary;
   skill: Skill;
   problems: Problem[];
   userId: string;
@@ -33,43 +36,34 @@ function getPhase(index: number, total: number): Phase {
 /* Phase colour is only ever used for a dot or a bar — never for text — so it
    is free to be saturated. Labels sit in --color-ink on a tinted pill, which
    is what actually has to clear 4.5:1 in both themes. */
-const PHASE_META: Record<Phase, { label: string; dot: string; tint: string; enter: string }> = {
+type PhaseLabelKey = "phaseWarmup" | "phasePractice" | "phaseReview";
+type PhaseEnterKey = "phaseEnterWarmup" | "phaseEnterPractice" | "phaseEnterReview";
+
+const PHASE_META: Record<Phase, { labelKey: PhaseLabelKey; dot: string; tint: string; enterKey: PhaseEnterKey }> = {
   warmup: {
-    label: "Bemelegítés",
+    labelKey: "phaseWarmup" as const,
     dot: "var(--color-amber-darker)",
     tint: "var(--color-amber-tint)",
-    enter: "Bemelegítés — lazán, hogy beinduljon a gépezet.",
+    enterKey: "phaseEnterWarmup" as const,
   },
   practice: {
-    label: "Gyakorlás",
+    labelKey: "phasePractice" as const,
     dot: "var(--color-primary-solid)",
     tint: "var(--color-brand-950)",
-    enter: "Jöhet az éles gyakorlás. Most jönnek az igazi feladatok.",
+    enterKey: "phaseEnterPractice" as const,
   },
   review: {
-    label: "Ismétlés",
+    labelKey: "phaseReview" as const,
     dot: "var(--color-amber-darker)",
     tint: "var(--color-amber-tint)",
-    enter: "Utolsó kör — ismételjük át, amit ma megtanultál.",
+    enterKey: "phaseEnterReview" as const,
   },
 };
 
 // Hints escalate: nudge -> intermediate step -> worked answer. Naming them
 // by what they give lets a student stop before the answer is spoiled.
-const HINT_LABELS = ["Indulj innen", "Következő lépés", "Megoldás menete"];
 
-const CORRECT_PHRASES = [
-  "Szuper! Pontosan így kell.",
-  "Remek munka!",
-  "Magabiztosan haladsz!",
-  "Ügyes vagy — ez az!",
-];
 
-const RETRY_PHRASES = [
-  "Még nem az — nézd meg a tippet, és próbáld újra!",
-  "Majdnem! Egy lépés még hiányzik.",
-  "Nem baj, ebből tanulunk. Nézzük együtt!",
-];
 
 let phraseIndex = 0;
 function nextPhrase(list: string[]) {
@@ -85,7 +79,7 @@ let popupId = 0;
 
 type ItemState = "pending" | "correct" | "struggled" | "current";
 
-export default function PracticeSession({ lang, skill,
+export default function PracticeSession({ lang, dict, skill,
   problems,
   userId,
   isPremium,
@@ -216,7 +210,7 @@ export default function PracticeSession({ lang, skill,
         if (result.correct) {
           setCorrectCount((n) => n + 1);
           setSessionXp((xp) => xp + result.xpEarned);
-          setMessage(nextPhrase(CORRECT_PHRASES));
+          setMessage(nextPhrase(dict.practice.correctPhrases));
           spawnXpPopup(result.xpEarned);
           setResults((r) => ({
             ...r,
@@ -232,7 +226,7 @@ export default function PracticeSession({ lang, skill,
         } else {
           setCombo(0);
           setWrongAttempts((n) => n + 1);
-          setMessage(nextPhrase(RETRY_PHRASES));
+          setMessage(nextPhrase(dict.practice.incorrectPhrases));
           setResults((r) => ({ ...r, [currentIndex]: "struggled" }));
           // Escalate the ladder by one rung so there is always a next thing to try.
           setHintsShown((h) => Math.min(h + 1, hints.length));
@@ -374,27 +368,27 @@ export default function PracticeSession({ lang, skill,
         </motion.div>
 
         <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--color-ink)", marginBottom: 10 }}>
-          Mára ennyi fért bele
+          {dict.practice.limitHeading}
         </h2>
         <p style={{ fontSize: 14.5, lineHeight: 1.6, color: "var(--color-muted)", marginBottom: 8 }}>
-          Ma {FREE_DAILY_LIMIT} feladatot oldottál meg — ez az ingyenes napi keret.
-          Holnap újratöltődik, vagy folytathatod most prémiummal.
+          {t(dict.practice.limitLine1, { n: FREE_DAILY_LIMIT })}
+          {dict.practice.limitLine2}
         </p>
         {sessionXp > 0 && (
           <p style={{ fontSize: 14, fontWeight: 700, color: "var(--color-ink)", marginBottom: 28 }}>
-            Ebben a körben +{sessionXp} XP-t szereztél.
+            {t(dict.practice.limitEarned, { xp: sessionXp })}
           </p>
         )}
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center", marginTop: 20 }}>
           <button onClick={() => router.push(`/${lang}/app/pricing`)} className="hover-lift" style={{ ...primaryBtn, width: "100%", maxWidth: 320 }}>
-            Prémium aktiválása — 3,99 EUR/hó
+            {dict.practice.upgradeCta}
           </button>
           <button
             onClick={() => router.push(`/${lang}/app/dashboard`)}
             style={{ ...quietBtn, width: "100%", maxWidth: 320, background: "transparent", border: "none", color: "var(--color-muted)" }}
           >
-            Vissza az irányítópulthoz
+            {dict.practice.backToDashboard}
           </button>
         </div>
       </motion.div>
@@ -432,7 +426,7 @@ export default function PracticeSession({ lang, skill,
             color: "var(--color-faint)",
           }}
         >
-          Munka elvégezve
+          {dict.practice.doneTitle}
         </div>
 
         {/* XP — translated in, never scaled, so the digits stay crisp. */}
@@ -455,7 +449,7 @@ export default function PracticeSession({ lang, skill,
         </motion.div>
 
         <div style={{ fontSize: 14, color: "var(--color-muted)", marginBottom: 22 }}>
-          {correctCount}/{answered} elsőre vagy másodikra megoldva · {accuracy}% találat
+          {t(dict.practice.doneAccuracyLine, { correct: correctCount, answered, acc: accuracy })}
         </div>
 
         {/* Streak */}
@@ -491,7 +485,7 @@ export default function PracticeSession({ lang, skill,
               <path d="M12 3c1 3-3 4-3 8a3 3 0 0 0 6 0c0-2-1-3-1-4 2 1 3 3 3 5a5 5 0 0 1-10 0c0-4 3-6 5-9z" />
             </svg>
             {streakResult.current} napos sorozat
-            {streakResult.newShield && <span>· Új sorozatvédő!</span>}
+            {streakResult.newShield && <span>{dict.practice.doneNewShield}</span>}
           </motion.div>
         )}
 
@@ -507,7 +501,7 @@ export default function PracticeSession({ lang, skill,
         >
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 13.5, fontWeight: 700, marginBottom: 8 }}>
             <span style={{ color: "var(--color-ink)" }}>{skill.name_hu}</span>
-            <span style={{ color: "var(--color-muted)" }}>{mastery}% biztos tudás</span>
+            <span style={{ color: "var(--color-muted)" }}>{t(dict.practice.masteryConfident, { pct: mastery })}</span>
           </div>
           <div
             style={{ height: 8, background: "var(--color-surface-4)", borderRadius: 4, overflow: "hidden" }}
@@ -515,7 +509,7 @@ export default function PracticeSession({ lang, skill,
             aria-valuenow={mastery}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-label={`${skill.name_hu} tudásszint`}
+            aria-label={t(dict.practice.masteryAria, { skill: skill.name_hu })}
           >
             <motion.div
               initial={reduce ? false : { width: 0 }}
@@ -530,17 +524,17 @@ export default function PracticeSession({ lang, skill,
           </div>
           <div style={{ fontSize: 12.5, color: "var(--color-muted)", marginTop: 8 }}>
             {isMastered
-              ? "Elsajátítva! Néhány nap múlva jön egy ismétlés, hogy meg is maradjon."
-              : `Még ${Math.max(1, Math.round((MASTERY_THRESHOLD - (pKnow ?? 0)) * 100))} százalékpont az elsajátításig.`}
+              ? dict.practice.masteredNote
+              : t(dict.practice.masteryRemaining, { n: Math.max(1, Math.round((MASTERY_THRESHOLD - (pKnow ?? 0)) * 100)) })}
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
           <button onClick={() => router.push(`/${lang}/app/skills`)} className="hover-lift" style={quietBtn}>
-            Másik téma
+            {dict.practice.otherTopic}
           </button>
           <button onClick={() => router.push(`/${lang}/app/dashboard`)} className="hover-lift" style={primaryBtn}>
-            Vissza az irányítópulthoz
+            {dict.practice.backToDashboard}
           </button>
         </div>
       </motion.div>
@@ -569,13 +563,13 @@ export default function PracticeSession({ lang, skill,
           </svg>
         </div>
         <h2 style={{ fontSize: 19, fontWeight: 800, color: "var(--color-ink)", marginBottom: 8 }}>
-          Ehhez a témához még nincs feladat
+          {dict.practice.emptyTitle}
         </h2>
         <p style={{ fontSize: 14, color: "var(--color-muted)", marginBottom: 24 }}>
-          Dolgozunk rajta. Addig válassz másik témát a készségfáról.
+          {dict.practice.emptyBody}
         </p>
         <button onClick={() => router.push(`/${lang}/app/skills`)} className="hover-lift" style={primaryBtn}>
-          Vissza a készségfához
+          {dict.practice.backToSkills}
         </button>
       </motion.div>
     );
@@ -623,12 +617,12 @@ export default function PracticeSession({ lang, skill,
             fontWeight: 600,
             cursor: "pointer",
           }}
-          aria-label="Kilépés a feladatsorból"
+          aria-label={dict.practice.exitAria}
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M15 19l-7-7 7-7" />
           </svg>
-          Kilépés
+          {dict.practice.exit}
         </button>
 
         {/* Phase pill */}
@@ -657,7 +651,7 @@ export default function PracticeSession({ lang, skill,
               transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
               style={{ width: 7, height: 7, borderRadius: "50%", background: phaseInfo.dot }}
             />
-            {phaseInfo.label}
+            {dict.practice[phaseInfo.labelKey]}
           </motion.span>
         </AnimatePresence>
 
@@ -681,7 +675,7 @@ export default function PracticeSession({ lang, skill,
             fontWeight: 800,
           }}
           aria-live="polite"
-          aria-label={`Megszerzett XP ebben a körben: ${sessionXp}`}
+          aria-label={t(dict.practice.xpAria, { xp: sessionXp })}
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--color-amber-darker)" aria-hidden="true">
             <path d="M12 2l2.6 6.6L21 10l-5 4.4L17.6 22 12 18.3 6.4 22 8 14.4 3 10l6.4-1.4z" />
@@ -705,7 +699,7 @@ export default function PracticeSession({ lang, skill,
                 fontWeight: 800,
                 color: "var(--color-ink)",
               }}
-              title={`${combo} hibátlan válasz egymás után`}
+              title={t(dict.practice.comboTitle, { n: combo })}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--color-amber-darker)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 3c1 3-3 4-3 8a3 3 0 0 0 6 0c0-2-1-3-1-4 2 1 3 3 3 5a5 5 0 0 1-10 0c0-4 3-6 5-9z" />
@@ -727,7 +721,7 @@ export default function PracticeSession({ lang, skill,
         aria-valuenow={currentIndex + 1}
         aria-valuemin={1}
         aria-valuemax={problems.length}
-        aria-label={`${currentIndex + 1}. feladat a ${problems.length}-ből, ${correctCount} helyes`}
+        aria-label={t(dict.practice.progressAria, { current: currentIndex + 1, total: problems.length, correct: correctCount })}
       >
         {problems.map((_, i) => {
           const st = itemState(i);
@@ -764,7 +758,7 @@ export default function PracticeSession({ lang, skill,
               marginBottom: 14,
             }}
           >
-            {PHASE_META[phaseAnnounce].enter}
+            {dict.practice[PHASE_META[phaseAnnounce].enterKey]}
           </motion.div>
         )}
       </AnimatePresence>
@@ -789,7 +783,7 @@ export default function PracticeSession({ lang, skill,
             <circle cx="12" cy="12" r="9" />
             <path d="M12 7v5l3 2" />
           </svg>
-          1 feladatod maradt ma — prémiummal korlátlan.
+          {dict.practice.limitOneLeft}
         </div>
       )}
 
@@ -835,6 +829,7 @@ export default function PracticeSession({ lang, skill,
 
             <ProblemDisplay
               lang={lang}
+              dict={dict.problem}
               key={`${currentProblem.id}-${resetKey}`}
               problem={currentProblem}
               onAnswer={handleAnswer}
@@ -873,7 +868,7 @@ export default function PracticeSession({ lang, skill,
                   }}
                   aria-hidden="true"
                 />
-                Értékelés…
+                {dict.practice.evaluating}
               </motion.div>
             )}
           </AnimatePresence>
@@ -892,7 +887,7 @@ export default function PracticeSession({ lang, skill,
                 fontSize: 14,
               }}
             >
-              Nem sikerült elküldeni a választ. Ellenőrizd a netkapcsolatot, és próbáld újra.
+              {dict.practice.submitError}
             </div>
           )}
 
@@ -963,7 +958,7 @@ export default function PracticeSession({ lang, skill,
                       {...rise(0.2)}
                       style={{ fontSize: 13.5, color: "var(--color-muted)", marginTop: 3, fontWeight: 600 }}
                     >
-                      Készség elsajátítva — bekerül az ismétlési körbe.
+                      {dict.practice.masteredInline}
                     </motion.div>
                   )}
                   {!feedback.correct && hintsShown > 0 && (
@@ -1036,8 +1031,8 @@ export default function PracticeSession({ lang, skill,
                               marginBottom: 3,
                             }}
                           >
-                            {HINT_LABELS[Math.min(i, HINT_LABELS.length - 1)]}
-                            {isLast && hints.length > 1 && " · elárulja a menetet"}
+                            {dict.practice.hintLabels[Math.min(i, dict.practice.hintLabels.length - 1)]}
+                            {isLast && hints.length > 1 && dict.practice.hintRevealsPath}
                           </div>
                           <div style={{ fontSize: 14.5, lineHeight: 1.55, color: "var(--color-ink)" }}>
                             <MathText text={h.text_hu} />
@@ -1085,7 +1080,7 @@ export default function PracticeSession({ lang, skill,
                   <path d="M10 22h4" />
                   <path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z" />
                 </svg>
-                {hintsShown === 0 ? "Kérek egy tippet" : "Még egy tippet"}
+                {hintsShown === 0 ? dict.practice.hintFirst : dict.practice.hintMore}
                 <span style={{ color: "var(--color-muted)", fontWeight: 600 }}>
                   {hintsShown}/{hints.length}
                 </span>
@@ -1096,7 +1091,7 @@ export default function PracticeSession({ lang, skill,
 
             {!isPremium && (
               <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--color-muted)" }}>
-                Személyre szabott AI-magyarázat — Prémium
+                {dict.practice.aiUpsell}
               </div>
             )}
           </div>
@@ -1122,7 +1117,7 @@ export default function PracticeSession({ lang, skill,
                       <path d="M3 12a9 9 0 1 0 3-6.7" />
                       <path d="M3 4v5h5" />
                     </svg>
-                    Újrapróbálom
+                    {dict.practice.retry}
                   </button>
                 )}
                 <button
@@ -1146,7 +1141,7 @@ export default function PracticeSession({ lang, skill,
                     cursor: isAdvancing ? "progress" : "pointer",
                   }}
                 >
-                  {isLastProblem ? "Összefoglaló" : feedback.correct ? "Következő" : "Tovább enélkül"}
+                  {isLastProblem ? dict.practice.summary : feedback.correct ? dict.practice.next : dict.practice.continueAnyway}
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M9 5l7 7-7 7" />
                   </svg>
@@ -1214,7 +1209,7 @@ export default function PracticeSession({ lang, skill,
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--color-amber-darker)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={reduce ? undefined : "flame-flicker"} aria-hidden="true">
               <path d="M12 3c1 3-3 4-3 8a3 3 0 0 0 6 0c0-2-1-3-1-4 2 1 3 3 3 5a5 5 0 0 1-10 0c0-4 3-6 5-9z" />
             </svg>
-            {comboFlash} hibátlan egymás után!
+            {t(dict.practice.combo, { n: comboFlash })}
           </motion.div>
         )}
       </AnimatePresence>
@@ -1245,7 +1240,7 @@ export default function PracticeSession({ lang, skill,
             <motion.div
               role="dialog"
               aria-modal="true"
-              aria-label="Kilépés megerősítése"
+              aria-label={dict.practice.exitConfirmAria}
               initial={reduce ? { opacity: 0 } : { opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={reduce ? { opacity: 0 } : { opacity: 0, y: 12 }}
@@ -1262,16 +1257,16 @@ export default function PracticeSession({ lang, skill,
               onClick={(e) => e.stopPropagation()}
             >
               <h3 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-ink)", marginTop: 0, marginBottom: 8 }}>
-                Kilépsz a feladatsorból?
+                {dict.practice.exitTitle}
               </h3>
               <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--color-muted)", marginBottom: 22 }}>
                 {answeredThisSession > 0
-                  ? `Az eddigi ${answeredThisSession} válaszod és a ${sessionXp} XP megmarad, de ez a kör most véget ér.`
-                  : "Még egy feladatot sem oldottál meg ebben a körben."}
+                  ? t(dict.practice.exitBody, { answered: answeredThisSession, xp: sessionXp })
+                  : dict.practice.exitBodyEmpty}
               </p>
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={() => router.push(`/${lang}/app/skills`)} className="hover-lift" style={{ ...quietBtn, flex: 1, color: "var(--color-muted)" }}>
-                  Kilépés
+                  {dict.practice.exit}
                 </button>
                 <button onClick={() => setShowExitConfirm(false)} className="hover-lift" style={{ ...primaryBtn, flex: 1 }} autoFocus>
                   Folytatom

@@ -24,6 +24,7 @@ export default async function PracticePage({ params }: Props) {
     return (
       <PracticeSession
         lang={lang}
+        dict={dict}
         skill={skill}
         problems={problems}
         userId={DEMO_USER_ID}
@@ -78,6 +79,7 @@ export default async function PracticePage({ params }: Props) {
   return (
     <PracticeSession
         lang={lang}
+        dict={dict}
       skill={skill}
       problems={problems ?? []}
       userId={user.id}

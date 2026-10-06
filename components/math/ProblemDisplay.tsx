@@ -1,6 +1,8 @@
 "use client";
 
 import type { Locale } from "@/lib/i18n/config";
+import type { Dictionary } from "@/lib/i18n/dictionaries/hu";
+import { t } from "@/lib/i18n/t";
 import { LOCALE_META } from "@/lib/i18n/config";
 
 import { useState, useEffect, useRef } from "react";
@@ -13,6 +15,7 @@ export type AnswerStatus = "idle" | "submitting" | "correct" | "incorrect";
 
 interface ProblemDisplayProps {
   lang: Locale;
+  dict: Dictionary["problem"];
   problem: Problem;
   onAnswer: (answer: string) => void;
   disabled?: boolean;
@@ -38,23 +41,23 @@ function normalizeNumber(raw: string, locale: Locale): string {
   return trimmed.replace(/,/g, "");
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  fill_number: "Szám beírása",
-  equation_input: "Egyenlet",
-  multiple_choice: "Feleletválasztós",
-  guided_steps: "Lépések",
+const TYPE_LABELS: Record<string, keyof Dictionary["problem"]> = {
+  fill_number: "typeFillNumber",
+  equation_input: "typeEquation",
+  multiple_choice: "typeMultipleChoice",
+  guided_steps: "typeGuidedSteps",
 };
 
 const OPTION_LABELS = ["A", "B", "C", "D"];
 
 /** Difficulty as three dots — a number like "62%" reads as a score, not a setting. */
-function difficultyLabel(d: number): { text: string; level: number } {
-  if (d < 0.34) return { text: "Könnyű", level: 1 };
-  if (d < 0.67) return { text: "Közepes", level: 2 };
-  return { text: "Nehéz", level: 3 };
+function difficultyLabel(d: number): { key: "difficultyEasy" | "difficultyMedium" | "difficultyHard"; level: number } {
+  if (d < 0.34) return { key: "difficultyEasy" as const, level: 1 };
+  if (d < 0.67) return { key: "difficultyMedium" as const, level: 2 };
+  return { key: "difficultyHard" as const, level: 3 };
 }
 
-export function ProblemDisplay({ lang, problem, onAnswer, disabled, status = "idle" }: ProblemDisplayProps) {
+export function ProblemDisplay({ lang, dict, problem, onAnswer, disabled, status = "idle" }: ProblemDisplayProps) {
   const [textInput, setTextInput] = useState("");
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
@@ -139,7 +142,7 @@ export function ProblemDisplay({ lang, problem, onAnswer, disabled, status = "id
         gap: 8,
       }}
     >
-      Elküldés
+      {dict.submit}
       <kbd
         aria-hidden="true"
         style={{
@@ -170,7 +173,7 @@ export function ProblemDisplay({ lang, problem, onAnswer, disabled, status = "id
         onBlur={() => setFocused(false)}
         disabled={disabled}
         placeholder={placeholder}
-        aria-label="A válaszod"
+        aria-label={dict.answerAria}
         autoComplete="off"
         style={mono ? { ...inputStyle, fontFamily: "var(--font-jetbrains), monospace" } : inputStyle}
       />
@@ -192,7 +195,7 @@ export function ProblemDisplay({ lang, problem, onAnswer, disabled, status = "id
             color: "var(--color-ink)",
           }}
         >
-          {TYPE_LABELS[problem.type] ?? problem.type}
+          {TYPE_LABELS[problem.type] ? dict[TYPE_LABELS[problem.type]] : problem.type}
         </span>
 
         {problem.matura_relevant && (
@@ -206,7 +209,7 @@ export function ProblemDisplay({ lang, problem, onAnswer, disabled, status = "id
               color: "var(--color-ink)",
             }}
           >
-            Érettségi
+            {dict.matura}
           </span>
         )}
 
@@ -222,7 +225,7 @@ export function ProblemDisplay({ lang, problem, onAnswer, disabled, status = "id
             background: "var(--color-surface-3)",
             color: "var(--color-ink)",
           }}
-          title={`Nehézség: ${diff.text}`}
+          title={`${dict.difficulty}: ${dict[diff.key]}`}
         >
           <span aria-hidden="true" style={{ display: "inline-flex", gap: 3 }}>
             {[1, 2, 3].map((n) => (
@@ -238,7 +241,7 @@ export function ProblemDisplay({ lang, problem, onAnswer, disabled, status = "id
               />
             ))}
           </span>
-          {diff.text}
+          {dict[diff.key]}
         </span>
       </div>
 
@@ -253,15 +256,15 @@ export function ProblemDisplay({ lang, problem, onAnswer, disabled, status = "id
         <MathText text={problem.content_latex} />
       </div>
 
-      {problem.type === "fill_number" && textForm("Add meg a választ… (pl. 3,14)")}
+      {problem.type === "fill_number" && textForm(dict.placeholderNumber)}
 
-      {problem.type === "equation_input" && textForm("Írd be az egyenlet megoldását…", true)}
+      {problem.type === "equation_input" && textForm(dict.placeholderEquation, true)}
 
       {problem.type === "multiple_choice" &&
         (mcOptions ? (
           <div
             role="group"
-            aria-label="Válaszlehetőségek"
+            aria-label={dict.choicesAria}
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
@@ -323,7 +326,7 @@ export function ProblemDisplay({ lang, problem, onAnswer, disabled, status = "id
           </div>
         ) : (
           /* Fallback: no options stored — treat as text input */
-          textForm("Add meg a betűjelet (A, B, C, D)…")
+          textForm(dict.placeholderChoice)
         ))}
     </div>
   );

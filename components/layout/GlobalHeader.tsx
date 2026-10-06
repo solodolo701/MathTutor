@@ -127,7 +127,7 @@ export function GlobalHeader({
               key="streak"
               {...pillMotion}
               exit={reduce ? { opacity: 0 } : { opacity: 0, y: -6 }}
-              title={`${streakCount} egymást követő gyakorlónap`}
+              title={t(dict.problem.streakDaysTitle, { n: streakCount })}
               style={{
                 display: "flex",
                 alignItems: "center",

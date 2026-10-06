@@ -1,4 +1,5 @@
 import { getDictionary } from "@/lib/i18n";
+import { t } from "@/lib/i18n/t";
 import { isLocale } from "@/lib/i18n/config";
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -86,10 +87,10 @@ export default async function SkillsPage({ params }: { params: Promise<{ lang: s
       state,
       pct,
       prereq: (s.prerequisites as string[] | null)?.[0] ?? null,
-      gradeTag: s.grade === 10 ? "10. évf." : undefined,
+      gradeTag: s.grade === 10 ? t(dict.skills.gradeTag, { grade: 10 }) : undefined,
       desc: s.description_hu ?? "",
     };
   });
 
-  return <SkillsTreeClient lang={lang} skills={skillNodes} />;
+  return <SkillsTreeClient lang={lang} dict={dict.skills} skills={skillNodes} />;
 }

@@ -1,6 +1,8 @@
 "use client";
 
 import type { Locale } from "@/lib/i18n/config";
+import type { Dictionary } from "@/lib/i18n/dictionaries/hu";
+import { t } from "@/lib/i18n/t";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -29,6 +31,7 @@ export interface SkillNode {
 
 interface Props {
   lang: Locale;
+  dict: Dictionary["skills"];
   skills: SkillNode[];
 }
 
@@ -193,6 +196,7 @@ function NodeCircle({
 }
 
 function SkillButton({
+  dict,
   skill,
   index,
   selected,
@@ -200,6 +204,7 @@ function SkillButton({
   onSelect,
   onHover,
 }: {
+  dict: Dictionary["skills"];
   skill: SkillNode;
   index: number;
   selected: boolean;
@@ -225,10 +230,10 @@ function SkillButton({
 
   const statusLabel =
     skill.state === "mastered"
-      ? "elsajátítva"
+      ? dict.ariaMastered
       : skill.state === "active"
-        ? `folyamatban, ${Math.round(skill.pct * 100)} százalék`
-        : "zárolva";
+        ? t(dict.ariaActive, { pct: Math.round(skill.pct * 100) })
+        : dict.ariaLocked;
 
   function handleClick() {
     onSelect();
@@ -335,7 +340,7 @@ function SkillButton({
   );
 }
 
-export function SkillsTreeClient({ lang, skills }: Props) {
+export function SkillsTreeClient({ lang, dict, skills }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const reduce = useReducedMotion() ?? false;
@@ -399,17 +404,16 @@ export function SkillsTreeClient({ lang, skills }: Props) {
         style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}
       >
         <div style={{ fontSize: 14, color: "var(--color-muted)" }}>
-          A 9. évfolyam kerettanterve — kattints egy készségre a részletekért.{" "}
+          {dict.intro}{" "}
           <strong style={{ color: "var(--color-ink)" }}>
-            {masteredCount}/{skills.length}
-          </strong>{" "}
-          elsajátítva.
+            {t(dict.masteredCount, { done: masteredCount, total: skills.length })}
+          </strong>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 13, fontWeight: 600, color: "var(--color-muted)" }}>
           {[
-            { label: "Zárolva", color: "var(--color-disabled)" },
-            { label: "Folyamatban", color: "var(--color-primary)" },
-            { label: "Elsajátítva", color: "var(--color-amber)" },
+            { label: dict.legendLocked, color: "var(--color-disabled)" },
+            { label: dict.legendActive, color: "var(--color-primary)" },
+            { label: dict.legendMastered, color: "var(--color-amber)" },
           ].map((item) => (
             <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <div style={{ width: 10, height: 10, borderRadius: "50%", background: item.color, flexShrink: 0 }} />
@@ -471,6 +475,7 @@ export function SkillsTreeClient({ lang, skills }: Props) {
           {/* Skill nodes */}
           {skills.map((skill, i) => (
             <SkillButton
+              dict={dict}
               key={skill.id}
               skill={skill}
               index={i}
@@ -531,7 +536,7 @@ export function SkillsTreeClient({ lang, skills }: Props) {
                             : "var(--color-disabled)",
                     }}
                   />
-                  {selected.state === "mastered" ? "Elsajátítva" : selected.state === "active" ? "Folyamatban" : "Zárolva"}
+                  {selected.state === "mastered" ? dict.statusMastered : selected.state === "active" ? dict.statusActive : dict.statusLocked}
                 </div>
 
                 {/* Name */}
@@ -556,7 +561,7 @@ export function SkillsTreeClient({ lang, skills }: Props) {
                       marginBottom: 6,
                     }}
                   >
-                    <span>Elsajátítás</span>
+                    <span>{dict.mastery}</span>
                     <span style={{ fontVariantNumeric: "tabular-nums" }}>
                       {Math.round(selected.pct * 100)}%
                     </span>
@@ -575,7 +580,7 @@ export function SkillsTreeClient({ lang, skills }: Props) {
                   </div>
                   {selected.state === "active" && (
                     <div style={{ fontSize: 12, color: "var(--color-faint)", marginTop: 6 }}>
-                      80%-tól számít elsajátítottnak.
+                      {dict.masteryHint}
                     </div>
                   )}
                 </div>
@@ -602,7 +607,7 @@ export function SkillsTreeClient({ lang, skills }: Props) {
                       <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                     </svg>
                     <span>
-                      Előbb teljesítsd: <strong style={{ color: "var(--color-ink)" }}>{byId[selected.prereq].name}</strong>
+                      {dict.prereq} <strong style={{ color: "var(--color-ink)" }}>{byId[selected.prereq].name}</strong>
                     </span>
                   </motion.div>
                 )}
@@ -627,7 +632,7 @@ export function SkillsTreeClient({ lang, skills }: Props) {
                       marginTop: 4,
                     }}
                   >
-                    Gyakorlás indítása
+                    {dict.startPractice}
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M9 5l7 7-7 7" />
                     </svg>
@@ -671,7 +676,7 @@ export function SkillsTreeClient({ lang, skills }: Props) {
                   <path d="M6 8.2V15.8" />
                   <path d="M8.2 12H12a4 4 0 0 0 4-4" />
                 </motion.svg>
-                Válassz egy készséget a térképen.
+                {dict.empty}
               </motion.div>
             )}
           </AnimatePresence>
