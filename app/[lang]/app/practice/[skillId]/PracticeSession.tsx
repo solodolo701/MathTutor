@@ -834,6 +834,7 @@ export default function PracticeSession({ lang, skill,
             </div>
 
             <ProblemDisplay
+              lang={lang}
               key={`${currentProblem.id}-${resetKey}`}
               problem={currentProblem}
               onAnswer={handleAnswer}

@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { SkillsTreeClient } from "@/components/skills/SkillsTreeClient";
 import type { SkillNode } from "@/components/skills/SkillsTreeClient";
 import { DEMO_MODE } from "@/lib/demo/config";
-import { DEMO_SKILLS, demoState, getDemoUserSkill } from "@/lib/demo/data";
+import { demoState, getDemoUserSkill, getDemoSkills } from "@/lib/demo/data";
 import type { Skill } from "@/types/supabase";
 
 // Fixed layout positions matching the design prototype
@@ -37,7 +37,7 @@ export default async function SkillsPage({ params }: { params: Promise<{ lang: s
   let userSkillMap: Map<string, { p_know: number }>;
 
   if (DEMO_MODE) {
-    skills = DEMO_SKILLS;
+    skills = getDemoSkills(lang);
     userSkillMap = new Map(
       Array.from(demoState.userSkills.keys()).map((skillId) => [skillId, getDemoUserSkill(skillId)])
     );

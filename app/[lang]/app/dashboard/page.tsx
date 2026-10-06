@@ -5,7 +5,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { DEMO_MODE } from "@/lib/demo/config";
-import { DEMO_PROFILE, DEMO_SKILLS, demoState } from "@/lib/demo/data";
+import { DEMO_PROFILE, demoState, getDemoSkills } from "@/lib/demo/data";
 
 /* Page-scoped motion. Kept here (not in globals.css) so this file owns its
    own choreography, and every rule is disabled under prefers-reduced-motion. */
@@ -62,15 +62,16 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
     totalWeekXp = demoState.xpEvents
       .filter((e) => new Date(e.created_at) >= weekStart)
       .reduce((sum, e) => sum + e.amount, 0);
+    const localisedSkills = getDemoSkills(lang);
     const userSkillEntries = Array.from(demoState.userSkills.entries());
     masteredCount = userSkillEntries.filter(([, us]) => us.p_know >= 0.8).length;
-    totalSkillCount = DEMO_SKILLS.length;
+    totalSkillCount = localisedSkills.length;
     streakDays = demoState.streak.current;
     shieldsAvailable = demoState.streak.shields_available;
 
     const inProgress = userSkillEntries.find(([, us]) => us.p_know > 0 && us.p_know < 0.8);
-    dailySkillId = inProgress?.[0] ?? DEMO_SKILLS[0].id;
-    dailySkillName = DEMO_SKILLS.find((s) => s.id === dailySkillId)?.name_hu ?? "Lineáris egyenletek";
+    dailySkillId = inProgress?.[0] ?? localisedSkills[0].id;
+    dailySkillName = localisedSkills.find((s) => s.id === dailySkillId)?.name_hu ?? "Lineáris egyenletek";
     questProgress = Math.min(userSkillEntries.length, 5);
   } else {
     const supabase = await createClient();

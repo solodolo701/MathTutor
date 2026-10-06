@@ -1,5 +1,7 @@
 import type { Skill, Problem } from "@/types/supabase";
 import { DEFAULT_BKT_PARAMS } from "@/lib/bkt";
+import type { Locale } from "@/lib/i18n/config";
+import { CONTENT_TRANSLATIONS } from "./content";
 
 export const DEMO_USER_ID = "demo-user";
 
@@ -150,11 +152,11 @@ export const DEMO_PROBLEMS: Record<string, Problem[]> = {
       ],
     }),
     makeProblem("algebraic-expressions", "fill_number", "Vonj össze: $5a - 3b + 2a + b$, majd $a=2, b=1$ esetén számítsd ki", {
-      solution_numeric: 15,
+      solution_numeric: 12,
       difficulty: 0.3,
       hints: [
-        { level: 1, text_hu: "Összevonás: $7a - 2b$" },
-        { level: 2, text_hu: "$7 \\cdot 2 - 2 \\cdot 1 = 14 - 2 = 12$... nézd át újra a lépéseket." },
+        { level: 1, text_hu: "Vond össze a hasonló tagokat: $7a - 2b$" },
+        { level: 2, text_hu: "Helyettesíts be: $7 \\cdot 2 - 2 \\cdot 1 = 14 - 2 = 12$" },
       ],
     }),
   ],
@@ -245,6 +247,17 @@ export const DEMO_PROBLEMS: Record<string, Problem[]> = {
   ],
 };
 
+/**
+ * Problem ids are reassigned per skill so they are stable and readable
+ * (`linear-equations-3`) rather than dependent on definition order across
+ * the whole file. Translations key off these ids.
+ */
+for (const [skillId, list] of Object.entries(DEMO_PROBLEMS)) {
+  list.forEach((problem, index) => {
+    problem.id = `${skillId}-${index + 1}`;
+  });
+}
+
 export interface DemoUserSkillState {
   p_know: number;
   attempts_total: number;
@@ -301,4 +314,45 @@ export function getDemoUserSkill(skillId: string): DemoUserSkillState {
       next_review_at: null,
     }
   );
+}
+
+/* ── Localised accessors ──────────────────────────────────────────────── */
+
+/**
+ * Skills and problems in the requested language. Hungarian is returned
+ * unchanged because it is the base content; anything without a translation
+ * falls back to the Hungarian text rather than rendering an empty string, so
+ * a gap in the translation degrades to a readable problem instead of a
+ * broken one.
+ */
+export function getDemoSkills(locale: Locale): Skill[] {
+  const pack = CONTENT_TRANSLATIONS[locale];
+  if (!pack) return DEMO_SKILLS;
+  return DEMO_SKILLS.map((skill) => {
+    const text = pack.skills[skill.id];
+    return text
+      ? { ...skill, name_hu: text.name, description_hu: text.desc }
+      : skill;
+  });
+}
+
+export function getDemoProblems(locale: Locale, skillId: string): Problem[] {
+  const list = DEMO_PROBLEMS[skillId] ?? [];
+  const pack = CONTENT_TRANSLATIONS[locale];
+  if (!pack) return list;
+  return list.map((problem) => {
+    const text = pack.problems[problem.id];
+    if (!text) return problem;
+    const existing = (problem.hints as Array<{ level: number; text_hu: string }>) ?? [];
+    return {
+      ...problem,
+      content_latex: text.content,
+      hints: text.hints.map((h, i) => ({ level: existing[i]?.level ?? i + 1, text_hu: h })),
+    };
+  });
+}
+
+export function findLocalisedDemoProblem(locale: Locale, problemId: string): Problem | undefined {
+  const skillId = problemId.slice(0, problemId.lastIndexOf("-"));
+  return getDemoProblems(locale, skillId).find((p) => p.id === problemId);
 }

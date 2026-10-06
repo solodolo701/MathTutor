@@ -4,7 +4,7 @@ import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import PracticeSession from "./PracticeSession";
 import { DEMO_MODE } from "@/lib/demo/config";
-import { DEMO_USER_ID, DEMO_SKILLS, DEMO_PROBLEMS } from "@/lib/demo/data";
+import { DEMO_USER_ID, getDemoSkills, getDemoProblems } from "@/lib/demo/data";
 
 interface Props {
   params: Promise<{ lang: string; skillId: string }>;
@@ -16,10 +16,10 @@ export default async function PracticePage({ params }: Props) {
   const dict = await getDictionary(lang);
 
   if (DEMO_MODE) {
-    const skill = DEMO_SKILLS.find((s) => s.id === skillId);
+    const skill = getDemoSkills(lang).find((s) => s.id === skillId);
     if (!skill) redirect(`/${lang}/app/skills`);
 
-    const problems = (DEMO_PROBLEMS[skillId] ?? []).slice(0, 14);
+    const problems = getDemoProblems(lang, skillId).slice(0, 14);
 
     return (
       <PracticeSession

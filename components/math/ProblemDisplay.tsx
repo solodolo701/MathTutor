@@ -1,5 +1,8 @@
 "use client";
 
+import type { Locale } from "@/lib/i18n/config";
+import { LOCALE_META } from "@/lib/i18n/config";
+
 import { useState, useEffect, useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import type { Problem } from "@/types/supabase";
@@ -9,6 +12,7 @@ import { MathText } from "./MathDisplay";
 export type AnswerStatus = "idle" | "submitting" | "correct" | "incorrect";
 
 interface ProblemDisplayProps {
+  lang: Locale;
   problem: Problem;
   onAnswer: (answer: string) => void;
   disabled?: boolean;
@@ -16,9 +20,22 @@ interface ProblemDisplayProps {
   status?: AnswerStatus;
 }
 
-function normalizeNumber(raw: string): string {
-  // Hungarian locale uses comma as decimal separator
-  return raw.trim().replace(",", ".");
+/**
+ * Converts what the student typed into a plain JS number string.
+ *
+ * The decimal separator is not cosmetic here: Hungarian and German write
+ * 3,14 while English writes 3.14. Treating a comma as a decimal point in
+ * every locale would turn an English "1,250" into 1.25, and ignoring it in
+ * Hungarian would reject a correctly-typed answer outright.
+ */
+function normalizeNumber(raw: string, locale: Locale): string {
+  const trimmed = raw.trim().replace(/\s/g, "");
+  if (LOCALE_META[locale].decimalSeparator === ",") {
+    // Comma is the decimal mark; a dot can only be a thousands separator.
+    return trimmed.replace(/\./g, "").replace(",", ".");
+  }
+  // Dot is the decimal mark; a comma can only be a thousands separator.
+  return trimmed.replace(/,/g, "");
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -37,7 +54,7 @@ function difficultyLabel(d: number): { text: string; level: number } {
   return { text: "Nehéz", level: 3 };
 }
 
-export function ProblemDisplay({ problem, onAnswer, disabled, status = "idle" }: ProblemDisplayProps) {
+export function ProblemDisplay({ lang, problem, onAnswer, disabled, status = "idle" }: ProblemDisplayProps) {
   const [textInput, setTextInput] = useState("");
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
@@ -57,7 +74,7 @@ export function ProblemDisplay({ problem, onAnswer, disabled, status = "idle" }:
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (disabled) return;
-    const normalized = normalizeNumber(textInput);
+    const normalized = normalizeNumber(textInput, lang);
     if (normalized) onAnswer(normalized);
   };
 
