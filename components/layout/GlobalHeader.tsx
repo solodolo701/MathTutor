@@ -3,31 +3,43 @@
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ThemeToggle } from "./ThemeToggle";
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import type { Locale } from "@/lib/i18n/config";
+import type { Dictionary } from "@/lib/i18n/dictionaries/hu";
+import { t } from "@/lib/i18n/t";
 
-const SCREEN_TITLES: Record<string, string> = {
-  "/app/dashboard": "Irányítópult",
-  "/app/skills": "Készségfa",
-  "/app/profile": "Profil",
-  "/app/pricing": "Prémium",
-};
+function screenTitles(dict: Dictionary): Record<string, string> {
+  return {
+    "/app/dashboard": dict.nav.dashboard,
+    "/app/skills": dict.nav.skills,
+    "/app/profile": dict.nav.profile,
+    "/app/pricing": dict.nav.pricing,
+  };
+}
 
-function getScreenTitle(pathname: string): string {
-  if (pathname.startsWith("/app/practice")) return "Gyakorlás";
-  return SCREEN_TITLES[pathname] ?? "MatematikaOkos";
+function getScreenTitle(pathname: string, dict: Dictionary): string {
+  if (pathname.includes("/app/practice")) return dict.nav.practice;
+  const titles = screenTitles(dict);
+  const key = Object.keys(titles).find((k) => pathname.endsWith(k));
+  return key ? titles[key] : dict.meta.appName;
 }
 
 export function GlobalHeader({
+  lang,
+  dict,
   streakCount,
   xpToday,
 }: {
+  lang: Locale;
+  dict: Dictionary;
   streakCount: number;
   xpToday: number;
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const reduce = useReducedMotion() ?? false;
-  const isPractice = pathname.startsWith("/app/practice");
-  const title = getScreenTitle(pathname);
+  const isPractice = pathname.includes("/app/practice");
+  const title = getScreenTitle(pathname, dict);
 
   // Text only ever translates or fades — scaling glyphs resamples them blurry.
   const pillMotion = {
@@ -63,7 +75,7 @@ export function GlobalHeader({
               exit={reduce ? { opacity: 0 } : { opacity: 0, x: -8 }}
               transition={{ duration: reduce ? 0 : 0.22, ease: "easeOut" }}
               whileHover={reduce ? undefined : { x: -2 }}
-              onClick={() => router.push("/app/dashboard")}
+              onClick={() => router.push(`/${lang}/app/dashboard`)}
               style={{
                 border: "none",
                 background: "var(--color-surface-3)",
@@ -180,10 +192,11 @@ export function GlobalHeader({
           >
             <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z" />
           </motion.svg>
-          {xpToday} XP ma
+          {t(dict.practice.xpToday, { xp: xpToday })}
         </motion.div>
 
-        <ThemeToggle />
+        <LanguageSwitcher lang={lang} label={dict.language.change} />
+        <ThemeToggle labels={dict.theme} />
       </div>
     </header>
   );

@@ -1,4 +1,6 @@
-import { redirect } from "next/navigation";
+import { getDictionary } from "@/lib/i18n";
+import { isLocale } from "@/lib/i18n/config";
+import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SkillsTreeClient } from "@/components/skills/SkillsTreeClient";
 import type { SkillNode } from "@/components/skills/SkillsTreeClient";
@@ -26,7 +28,11 @@ function getDefaultPos(index: number): { x: number; y: number } {
   return { x: 90 + col * 180, y: 90 + row * 140 };
 }
 
-export default async function SkillsPage() {
+export default async function SkillsPage({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params;
+  if (!isLocale(lang)) notFound();
+  const dict = await getDictionary(lang);
+
   let skills: Skill[];
   let userSkillMap: Map<string, { p_know: number }>;
 
@@ -40,7 +46,7 @@ export default async function SkillsPage() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) redirect("/login");
+    if (!user) redirect(`/${lang}/login`);
 
     const [{ data: dbSkills }, { data: userSkills }] = await Promise.all([
       supabase.from("skills").select("*").order("sort_order"),
@@ -85,5 +91,5 @@ export default async function SkillsPage() {
     };
   });
 
-  return <SkillsTreeClient skills={skillNodes} />;
+  return <SkillsTreeClient lang={lang} skills={skillNodes} />;
 }

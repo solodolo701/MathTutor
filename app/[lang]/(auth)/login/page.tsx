@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { DEMO_MODE } from "@/lib/demo/config";
 
@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const lang = (useParams().lang as string) || "hu";
 
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -19,7 +20,7 @@ export default function LoginPage() {
     setError(null);
 
     if (DEMO_MODE) {
-      router.push("/app/dashboard");
+      router.push(`/${lang}/app/dashboard`);
       router.refresh();
       setLoading(false);
       return;
@@ -30,7 +31,7 @@ export default function LoginPage() {
     if (error) {
       setError("Hibás e-mail cím vagy jelszó.");
     } else {
-      router.push("/app/dashboard");
+      router.push(`/${lang}/app/dashboard`);
       router.refresh();
     }
     setLoading(false);
@@ -38,7 +39,7 @@ export default function LoginPage() {
 
   async function handleGoogleLogin() {
     if (DEMO_MODE) {
-      router.push("/app/dashboard");
+      router.push(`/${lang}/app/dashboard`);
       return;
     }
     setLoading(true);
@@ -55,7 +56,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-zinc-950 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold text-white inline-flex items-center gap-2">
+          <Link href={`/${lang}`} className="text-2xl font-bold text-white inline-flex items-center gap-2">
             <span>📐</span> MatematikaOkos
           </Link>
           <h1 className="mt-4 text-xl font-semibold text-white">Bejelentkezés</h1>
@@ -124,7 +125,7 @@ export default function LoginPage() {
 
           <p className="mt-6 text-center text-sm text-zinc-500">
             Még nincs fiókod?{" "}
-            <Link href="/signup" className="text-indigo-400 hover:text-indigo-300">
+            <Link href={`/${lang}/signup`} className="text-indigo-400 hover:text-indigo-300">
               Regisztráció
             </Link>
           </p>

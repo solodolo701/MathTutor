@@ -1,9 +1,15 @@
+import { getDictionary } from "@/lib/i18n";
+import { isLocale } from "@/lib/i18n/config";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { DEMO_MODE } from "@/lib/demo/config";
 
-export default async function PricingPage() {
+export default async function PricingPage({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params;
+  if (!isLocale(lang)) notFound();
+  const dict = await getDictionary(lang);
+
   let isPremium = false;
 
   if (!DEMO_MODE) {
@@ -11,7 +17,7 @@ export default async function PricingPage() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) redirect("/login");
+    if (!user) redirect(`/${lang}/login`);
 
     const { data: profile } = await supabase
       .from("profiles")

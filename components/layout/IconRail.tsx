@@ -1,5 +1,8 @@
 "use client";
 
+import type { Locale } from "@/lib/i18n/config";
+import type { Dictionary } from "@/lib/i18n/dictionaries/hu";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
@@ -91,13 +94,19 @@ function NavBtn({
   );
 }
 
-export function IconRail() {
+export function IconRail({
+  lang,
+  nav,
+}: {
+  lang: Locale;
+  nav: Dictionary["nav"];
+}) {
   const pathname = usePathname();
   const reduce = useReducedMotion() ?? false;
-  const isDash = pathname === "/app/dashboard" || pathname.startsWith("/app/dashboard/");
-  const isSkills = pathname === "/app/skills" || pathname.startsWith("/app/skills/");
-  const isPractice = pathname.startsWith("/app/practice");
-  const isProfile = pathname.startsWith("/app/profile");
+  const isDash = pathname.endsWith("/app/dashboard") || pathname.includes("/app/dashboard/");
+  const isSkills = pathname.endsWith("/app/skills") || pathname.includes("/app/skills/");
+  const isPractice = pathname.includes("/app/practice");
+  const isProfile = pathname.includes("/app/profile");
 
   return (
     <nav
@@ -119,8 +128,8 @@ export function IconRail() {
     >
       {/* Logo mark */}
       <Link
-        href="/app/dashboard"
-        aria-label="MatematikaOkos — irányítópult"
+        href={`/${lang}/app/dashboard`}
+        aria-label={`MatematikaOkos — ${nav.dashboard}`}
         style={{ textDecoration: "none", flexShrink: 0 }}
       >
         <motion.div
@@ -146,7 +155,7 @@ export function IconRail() {
 
       {/* Nav buttons */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <NavBtn href="/app/dashboard" title="Irányítópult" active={isDash} reduce={reduce}>
+        <NavBtn href={`/${lang}/app/dashboard`} title={nav.dashboard} active={isDash} reduce={reduce}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 11.5 12 4l8 7.5" />
             <path d="M6 10v9h12v-9" />
@@ -154,7 +163,7 @@ export function IconRail() {
           </svg>
         </NavBtn>
 
-        <NavBtn href="/app/skills" title="Készségfa" active={isSkills} reduce={reduce}>
+        <NavBtn href={`/${lang}/app/skills`} title={nav.skills} active={isSkills} reduce={reduce}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="6" cy="6" r="2.2" />
             <circle cx="6" cy="18" r="2.2" />
@@ -164,7 +173,7 @@ export function IconRail() {
           </svg>
         </NavBtn>
 
-        <NavBtn href="/app/skills" title="Gyakorlás" active={isPractice} reduce={reduce}>
+        <NavBtn href={`/${lang}/app/skills`} title={nav.practice} active={isPractice} reduce={reduce}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="8" />
             <circle cx="12" cy="12" r="4" />
@@ -177,7 +186,7 @@ export function IconRail() {
       <div style={{ flex: 1 }} />
 
       {/* Avatar */}
-      <NavBtn href="/app/profile" title="Profil" active={isProfile} reduce={reduce}>
+      <NavBtn href={`/${lang}/app/profile`} title={nav.profile} active={isProfile} reduce={reduce}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="8" r="4" />
           <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />

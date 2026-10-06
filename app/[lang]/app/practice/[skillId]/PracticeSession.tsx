@@ -1,5 +1,7 @@
 "use client";
 
+import type { Locale } from "@/lib/i18n/config";
+
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -9,6 +11,7 @@ import { MathText } from "@/components/math/MathDisplay";
 import { submitAnswer, updateStreak } from "@/app/actions/session";
 
 interface Props {
+  lang: Locale;
   skill: Skill;
   problems: Problem[];
   userId: string;
@@ -82,8 +85,7 @@ let popupId = 0;
 
 type ItemState = "pending" | "correct" | "struggled" | "current";
 
-export default function PracticeSession({
-  skill,
+export default function PracticeSession({ lang, skill,
   problems,
   userId,
   isPremium,
@@ -385,11 +387,11 @@ export default function PracticeSession({
         )}
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center", marginTop: 20 }}>
-          <button onClick={() => router.push("/app/pricing")} className="hover-lift" style={{ ...primaryBtn, width: "100%", maxWidth: 320 }}>
+          <button onClick={() => router.push(`/${lang}/app/pricing`)} className="hover-lift" style={{ ...primaryBtn, width: "100%", maxWidth: 320 }}>
             Prémium aktiválása — 3,99 EUR/hó
           </button>
           <button
-            onClick={() => router.push("/app/dashboard")}
+            onClick={() => router.push(`/${lang}/app/dashboard`)}
             style={{ ...quietBtn, width: "100%", maxWidth: 320, background: "transparent", border: "none", color: "var(--color-muted)" }}
           >
             Vissza az irányítópulthoz
@@ -534,10 +536,10 @@ export default function PracticeSession({
         </div>
 
         <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-          <button onClick={() => router.push("/app/skills")} className="hover-lift" style={quietBtn}>
+          <button onClick={() => router.push(`/${lang}/app/skills`)} className="hover-lift" style={quietBtn}>
             Másik téma
           </button>
-          <button onClick={() => router.push("/app/dashboard")} className="hover-lift" style={primaryBtn}>
+          <button onClick={() => router.push(`/${lang}/app/dashboard`)} className="hover-lift" style={primaryBtn}>
             Vissza az irányítópulthoz
           </button>
         </div>
@@ -572,7 +574,7 @@ export default function PracticeSession({
         <p style={{ fontSize: 14, color: "var(--color-muted)", marginBottom: 24 }}>
           Dolgozunk rajta. Addig válassz másik témát a készségfáról.
         </p>
-        <button onClick={() => router.push("/app/skills")} className="hover-lift" style={primaryBtn}>
+        <button onClick={() => router.push(`/${lang}/app/skills`)} className="hover-lift" style={primaryBtn}>
           Vissza a készségfához
         </button>
       </motion.div>
@@ -1267,7 +1269,7 @@ export default function PracticeSession({
                   : "Még egy feladatot sem oldottál meg ebben a körben."}
               </p>
               <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={() => router.push("/app/skills")} className="hover-lift" style={{ ...quietBtn, flex: 1, color: "var(--color-muted)" }}>
+                <button onClick={() => router.push(`/${lang}/app/skills`)} className="hover-lift" style={{ ...quietBtn, flex: 1, color: "var(--color-muted)" }}>
                   Kilépés
                 </button>
                 <button onClick={() => setShowExitConfirm(false)} className="hover-lift" style={{ ...primaryBtn, flex: 1 }} autoFocus>

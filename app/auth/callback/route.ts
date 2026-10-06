@@ -1,16 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { DEFAULT_LOCALE, isLocale } from "@/lib/i18n/config";
 import type { NextRequest } from "next/server";
 import { DEMO_MODE } from "@/lib/demo/config";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/app/dashboard";
+  const cookieLocale = request.cookies.get("NEXT_LOCALE")?.value;
+  const lang = cookieLocale && isLocale(cookieLocale) ? cookieLocale : DEFAULT_LOCALE;
+  const next = searchParams.get("next") ?? `/${lang}/app/dashboard`;
 
   if (DEMO_MODE) {
-    return NextResponse.redirect(`${origin}/app/dashboard`);
+    return NextResponse.redirect(`${origin}/${lang}/app/dashboard`);
   }
 
   if (code) {
@@ -38,5 +41,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`);
+  return NextResponse.redirect(`${origin}/${lang}/login?error=auth_callback_failed`);
 }

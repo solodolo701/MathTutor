@@ -1,9 +1,11 @@
 "use client";
 
+import type { Dictionary } from "@/lib/i18n/dictionaries/hu";
+
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
-export function ThemeToggle() {
+export function ThemeToggle({ labels }: { labels: Dictionary["theme"] }) {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mounted, setMounted] = useState(false);
   const [pulseKey, setPulseKey] = useState(0);
@@ -44,9 +46,9 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      aria-label={isDark ? "Váltás világos módra" : "Váltás sötét módra"}
+      aria-label={isDark ? labels.toLight : labels.toDark}
       aria-pressed={isDark}
-      title={isDark ? "Világos mód" : "Sötét mód"}
+      title={isDark ? labels.light : labels.dark}
       className="hover-lift"
       style={{
         width: 36,

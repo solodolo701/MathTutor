@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { DEMO_MODE } from "@/lib/demo/config";
 
@@ -19,6 +19,7 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const lang = (useParams().lang as string) || "hu";
 
   const age = CURRENT_YEAR - birthYear;
   const needsParentalConsent = age < 16;
@@ -42,7 +43,7 @@ export default function SignupPage() {
     setError(null);
 
     if (DEMO_MODE) {
-      router.push("/app/dashboard");
+      router.push(`/${lang}/app/dashboard`);
       setLoading(false);
       return;
     }
@@ -83,7 +84,7 @@ export default function SignupPage() {
       await supabase.from("streaks").insert({ user_id: data.user.id });
     }
 
-    router.push("/app/dashboard");
+    router.push(`/${lang}/app/dashboard`);
     setLoading(false);
   }
 
@@ -91,7 +92,7 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center bg-zinc-950 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold text-white inline-flex items-center gap-2">
+          <Link href={`/${lang}`} className="text-2xl font-bold text-white inline-flex items-center gap-2">
             <span>📐</span> MatematikaOkos
           </Link>
           <h1 className="mt-4 text-xl font-semibold text-white">Regisztráció</h1>
@@ -253,7 +254,7 @@ export default function SignupPage() {
 
           <p className="mt-6 text-center text-sm text-zinc-500">
             Már van fiókod?{" "}
-            <Link href="/login" className="text-indigo-400 hover:text-indigo-300">
+            <Link href={`/${lang}/login`} className="text-indigo-400 hover:text-indigo-300">
               Bejelentkezés
             </Link>
           </p>

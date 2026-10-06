@@ -1,5 +1,7 @@
 "use client";
 
+import type { Locale } from "@/lib/i18n/config";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -26,6 +28,7 @@ export interface SkillNode {
 }
 
 interface Props {
+  lang: Locale;
   skills: SkillNode[];
 }
 
@@ -332,7 +335,7 @@ function SkillButton({
   );
 }
 
-export function SkillsTreeClient({ skills }: Props) {
+export function SkillsTreeClient({ lang, skills }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const reduce = useReducedMotion() ?? false;
@@ -607,7 +610,7 @@ export function SkillsTreeClient({ skills }: Props) {
                 {/* Unlocked: practice button */}
                 {selected.state !== "locked" && (
                   <Link
-                    href={`/app/practice/${selected.id}`}
+                    href={`/${lang}/app/practice/${selected.id}`}
                     className="hover-lift"
                     style={{
                       display: "inline-flex",

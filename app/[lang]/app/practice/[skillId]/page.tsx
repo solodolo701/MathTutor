@@ -1,24 +1,29 @@
-import { redirect } from "next/navigation";
+import { getDictionary } from "@/lib/i18n";
+import { isLocale } from "@/lib/i18n/config";
+import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import PracticeSession from "./PracticeSession";
 import { DEMO_MODE } from "@/lib/demo/config";
 import { DEMO_USER_ID, DEMO_SKILLS, DEMO_PROBLEMS } from "@/lib/demo/data";
 
 interface Props {
-  params: Promise<{ skillId: string }>;
+  params: Promise<{ lang: string; skillId: string }>;
 }
 
 export default async function PracticePage({ params }: Props) {
-  const { skillId } = await params;
+  const { lang, skillId } = await params;
+  if (!isLocale(lang)) notFound();
+  const dict = await getDictionary(lang);
 
   if (DEMO_MODE) {
     const skill = DEMO_SKILLS.find((s) => s.id === skillId);
-    if (!skill) redirect("/app/skills");
+    if (!skill) redirect(`/${lang}/app/skills`);
 
     const problems = (DEMO_PROBLEMS[skillId] ?? []).slice(0, 14);
 
     return (
       <PracticeSession
+        lang={lang}
         skill={skill}
         problems={problems}
         userId={DEMO_USER_ID}
@@ -33,7 +38,7 @@ export default async function PracticePage({ params }: Props) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect(`/${lang}/login`);
 
   const { data: skill } = await supabase
     .from("skills")
@@ -41,7 +46,7 @@ export default async function PracticePage({ params }: Props) {
     .eq("id", skillId)
     .single();
 
-  if (!skill) redirect("/app/skills");
+  if (!skill) redirect(`/${lang}/app/skills`);
 
   // Check freemium limit for free users
   const { data: profile } = await supabase
@@ -72,6 +77,7 @@ export default async function PracticePage({ params }: Props) {
 
   return (
     <PracticeSession
+        lang={lang}
       skill={skill}
       problems={problems ?? []}
       userId={user.id}

@@ -4,8 +4,21 @@ import { IconRail } from "@/components/layout/IconRail";
 import { GlobalHeader } from "@/components/layout/GlobalHeader";
 import { DEMO_MODE } from "@/lib/demo/config";
 import { demoState } from "@/lib/demo/data";
+import { getDictionary } from "@/lib/i18n";
+import { isLocale } from "@/lib/i18n/config";
+import { notFound } from "next/navigation";
 
-export default async function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ lang: string }>;
+}) {
+  const { lang } = await params;
+  if (!isLocale(lang)) notFound();
+  const dict = await getDictionary(lang);
+
   let streakCount = 0;
   let todayXp = 0;
 
@@ -22,7 +35,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) redirect("/login");
+    if (!user) redirect(`/${lang}/login`);
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -42,10 +55,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "var(--color-surface)" }}>
-      <IconRail />
+      <IconRail lang={lang} nav={dict.nav} />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
-        <GlobalHeader streakCount={streakCount} xpToday={todayXp} />
+        <GlobalHeader
+          lang={lang}
+          dict={dict}
+          streakCount={streakCount}
+          xpToday={todayXp}
+        />
 
         <main
           style={{

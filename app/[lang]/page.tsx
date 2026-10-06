@@ -2,6 +2,9 @@ import Link from "next/link";
 import { BookOpen, Zap, Bot, Trophy, Shield, Users } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { DEMO_MODE } from "@/lib/demo/config";
+import { getDictionary } from "@/lib/i18n";
+import { isLocale } from "@/lib/i18n/config";
+import { notFound } from "next/navigation";
 
 /* Page-scoped motion. Everything here is switched off under
    prefers-reduced-motion; nothing scales, so type never resamples. */
@@ -30,11 +33,16 @@ const LANDING_CSS = `
 }
 `;
 
-export default function Home() {
+export default async function Home({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params;
+  if (!isLocale(lang)) notFound();
+  const dict = await getDictionary(lang);
+  const L = dict.landing;
+
   // Without an auth backend, sending people to /signup is a dead end —
   // point the calls to action straight into the app instead.
-  const enterHref = DEMO_MODE ? "/app/dashboard" : "/signup";
-  const enterLabel = DEMO_MODE ? "Demó indítása" : "Ingyenes regisztráció";
+  const enterHref = DEMO_MODE ? `/${lang}/app/dashboard` : `/${lang}/signup`;
+  const enterLabel = DEMO_MODE ? L.ctaDemo : L.ctaSignup;
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "var(--color-bg-base)", color: "var(--color-text-primary)" }}>
@@ -57,14 +65,14 @@ export default function Home() {
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <ThemeToggle />
+          <ThemeToggle labels={dict.theme} />
           {!DEMO_MODE && (
             <Link
-              href="/login"
+              href={`/${lang}/login`}
               className="px-4 py-2 text-sm font-medium transition-colors"
               style={{ color: "var(--color-text-secondary)" }}
             >
-              Bejelentkezés
+              {dict.auth.login}
             </Link>
           )}
           <Link
@@ -103,25 +111,23 @@ export default function Home() {
               }}
             >
               <Zap size={14} />
-              <span>Magyar NAT 2020 tanterv alapján</span>
+              <span>{L.badge}</span>
             </div>
 
             <h1
               className="lp-rise text-5xl sm:text-6xl font-bold tracking-tight mb-6 leading-[1.1]"
               style={{ "--d": ".08s", color: "var(--color-text-primary)" } as React.CSSProperties}
             >
-              Okos matektanár
+              {L.headline1}
               <br />
-              <span style={{ color: "var(--color-primary)" }}>a zsebedben</span>
+              <span style={{ color: "var(--color-primary)" }}>{L.headline2}</span>
             </h1>
 
             <p
               className="lp-rise text-xl mb-4 leading-relaxed max-w-2xl mx-auto"
               style={{ "--d": ".16s", color: "var(--color-text-secondary)" } as React.CSSProperties}
             >
-              Adaptív feladatsor, AI segítség és játékosított tanulás —
-              kifejezetten magyar középiskolásoknak. Felkészítés az érettségire
-              3,99 EUR/hó-tól.
+              {L.sub}
             </p>
 
             {/* Social proof */}
@@ -129,9 +135,7 @@ export default function Home() {
               className="lp-rise text-sm mb-10"
               style={{ "--d": ".22s", color: "var(--color-text-muted)" } as React.CSSProperties}
             >
-              {DEMO_MODE
-                ? "Demó mód • Regisztráció nélkül kipróbálható • A haladás nem mentődik"
-                : "7 napos ingyenes prémium próba • Nem kell bankkártya • Azonnal elérhető"}
+              {DEMO_MODE ? L.proofDemo : L.proofLive}
             </p>
 
             <div
@@ -143,11 +147,11 @@ export default function Home() {
                 className="hover-lift lp-cta px-8 py-4 rounded-xl font-semibold text-lg"
                 style={{ background: "var(--color-primary-solid)", color: "var(--color-on-primary)" }}
               >
-                {DEMO_MODE ? "Demó indítása" : "Kezdj el ingyen"}{" "}
+                {DEMO_MODE ? L.ctaDemo : L.ctaHeroLive}{" "}
                 <span className="lp-arrow">→</span>
               </Link>
               <Link
-                href={DEMO_MODE ? "/app/skills" : "/login"}
+                href={DEMO_MODE ? `/${lang}/app/skills` : `/${lang}/login`}
                 className="hover-lift px-8 py-4 rounded-xl font-semibold text-lg border"
                 style={{
                   background: "var(--color-bg-card)",
@@ -155,7 +159,7 @@ export default function Home() {
                   color: "var(--color-text-secondary)",
                 }}
               >
-                {DEMO_MODE ? "Készségfa megtekintése" : "Van már fiókom"}
+                {DEMO_MODE ? L.ctaSkills : L.ctaHasAccount}
               </Link>
             </div>
           </div>
@@ -168,9 +172,9 @@ export default function Home() {
         >
           <div className="max-w-3xl mx-auto grid grid-cols-3 gap-8 text-center">
             {[
-              { value: "500+", label: "Feladat" },
-              { value: "9–10.", label: "Évfolyam" },
-              { value: "NAT 2020", label: "Tanterv" },
+              { value: "500+", label: L.statsProblems },
+              { value: "9–10.", label: L.statsGrades },
+              { value: "NAT 2020", label: L.statsCurriculum },
             ].map((s, i) => (
               <div
                 key={s.label}
@@ -198,30 +202,30 @@ export default function Home() {
               className="text-2xl font-bold text-center mb-12"
               style={{ color: "var(--color-text-primary)" }}
             >
-              Minden, amire szükséged van az érettségihez
+              {L.featuresTitle}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
               {[
                 {
                   Icon: Bot,
-                  title: "AI segítség",
-                  desc: "Elakadtál? A Claude AI-alapú tanár Szókratészi módszerrel vezet rá a megoldásra — magyarul.",
+                  title: L.featureAiTitle,
+                  desc: L.featureAiDesc,
                   accent: "var(--color-primary)",
                   bg: "var(--color-brand-950)",
                   border: "var(--color-brand-border)",
                 },
                 {
                   Icon: Zap,
-                  title: "Adaptív tanulás",
-                  desc: "A Bayes-féle tudáskövetés alapján pontosan azt gyakorolod, amire a legtöbbet fejlődsz.",
+                  title: L.featureAdaptiveTitle,
+                  desc: L.featureAdaptiveDesc,
                   accent: "var(--color-amber-darker)",
                   bg: "var(--color-mastery-950)",
                   border: "var(--color-mastery-border)",
                 },
                 {
                   Icon: Trophy,
-                  title: "Játékosított élmény",
-                  desc: "XP, sorozatok, kitüntetések és csapatok — a matektanulás élménnyé válik.",
+                  title: L.featureGameTitle,
+                  desc: L.featureGameDesc,
                   accent: "var(--color-amber-darker)",
                   bg: "var(--color-mastery-950)",
                   border: "var(--color-mastery-border)",
@@ -266,28 +270,26 @@ export default function Home() {
         >
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-2xl font-bold mb-10" style={{ color: "var(--color-text-primary)" }}>
-              Hogyan működik?
+              {L.howTitle}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
               {[
                 {
                   step: "1",
-                  title: DEMO_MODE ? "Lépj be a demóba" : "Regisztrálj",
-                  desc: DEMO_MODE
-                    ? "Nincs fiók, nincs bankkártya — egy kattintás, és bent vagy."
-                    : "Válaszd ki az évfolyamot, és indulj el — 2 perc alatt.",
+                  title: DEMO_MODE ? L.step1TitleDemo : L.step1Title,
+                  desc: DEMO_MODE ? L.step1DescDemo : L.step1Desc,
                   Icon: Users,
                 },
                 {
                   step: "2",
-                  title: "Gyakorolj naponta",
-                  desc: "15 perces adaptív feladatsor: bemelegítés, fókusz, ismétlés.",
+                  title: L.step2Title,
+                  desc: L.step2Desc,
                   Icon: BookOpen,
                 },
                 {
                   step: "3",
-                  title: "Fejlődj láthatóan",
-                  desc: "Kövesd a tudásnövekedésed képességenként, gyűjts XP-t és jelvényeket.",
+                  title: L.step3Title,
+                  desc: L.step3Desc,
                   Icon: Shield,
                 },
               ].map((s, i) => (
@@ -329,12 +331,10 @@ export default function Home() {
         <section className="px-6 py-20 text-center">
           <div className="lp-rise max-w-lg mx-auto">
             <h2 className="text-3xl font-bold mb-4" style={{ color: "var(--color-text-primary)" }}>
-              Kezdj el tanulni ma
+              {L.ctaTitle}
             </h2>
             <p className="mb-8" style={{ color: "var(--color-text-secondary)" }}>
-              {DEMO_MODE
-                ? "Nézz körül a demóban — fiók nélkül, azonnal."
-                : "7 napos prémium próba, bankkártya nélkül."}
+              {DEMO_MODE ? L.ctaSubDemo : L.ctaSubLive}
             </p>
             <Link
               href={enterHref}
@@ -352,7 +352,7 @@ export default function Home() {
         className="border-t px-6 py-8 text-center text-sm"
         style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-muted)" }}
       >
-        <p>© 2026 MatematikaOkos • Magyar középiskolásoknak • GDPR-megfelelő</p>
+        <p>{L.footer}</p>
       </footer>
     </div>
   );

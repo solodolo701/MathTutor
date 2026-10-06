@@ -1,10 +1,16 @@
-import { redirect } from "next/navigation";
+import { getDictionary } from "@/lib/i18n";
+import { isLocale } from "@/lib/i18n/config";
+import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { hu } from "@/lib/i18n/hu";
 import { DEMO_MODE } from "@/lib/demo/config";
 import { DEMO_PROFILE, demoState } from "@/lib/demo/data";
 
-export default async function ProfilePage() {
+export default async function ProfilePage({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params;
+  if (!isLocale(lang)) notFound();
+  const dict = await getDictionary(lang);
+
   let profile: { display_name: string; grade: number; subscription_status: string };
   let email: string;
   let totalXP: number;
@@ -26,7 +32,7 @@ export default async function ProfilePage() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) redirect("/login");
+    if (!user) redirect(`/${lang}/login`);
 
     const [{ data: dbProfile }, { data: badges }, { data: streak }, { data: xpTotal }] =
       await Promise.all([
@@ -65,12 +71,12 @@ export default async function ProfilePage() {
   async function signOut() {
     "use server";
     if (DEMO_MODE) {
-      redirect("/");
+      redirect(`/${lang}`);
       return;
     }
     const supabase = await createClient();
     await supabase.auth.signOut();
-    redirect("/login");
+    redirect(`/${lang}/login`);
   }
 
   return (

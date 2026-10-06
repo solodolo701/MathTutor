@@ -1,4 +1,6 @@
-import { redirect } from "next/navigation";
+import { getDictionary } from "@/lib/i18n";
+import { isLocale } from "@/lib/i18n/config";
+import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { DEMO_MODE } from "@/lib/demo/config";
@@ -38,7 +40,11 @@ const DASH_CSS = `
 }
 `;
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params;
+  if (!isLocale(lang)) notFound();
+  const dict = await getDictionary(lang);
+
   let displayName: string;
   let totalWeekXp: number;
   let masteredCount: number;
@@ -71,7 +77,7 @@ export default async function DashboardPage() {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) redirect("/login");
+    if (!user) redirect(`/${lang}/login`);
 
     const weekStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -210,7 +216,7 @@ export default async function DashboardPage() {
           <div style={{ fontSize: 24, fontWeight: 800 }}>{dailySkillName}</div>
           <div style={{ fontSize: 14, opacity: 0.9 }}>7 feladat · kb. 15 perc · +70 XP</div>
           <Link
-            href={`/app/practice/${dailySkillId}`}
+            href={`/${lang}/app/practice/${dailySkillId}`}
             className="dash-cta hover-lift"
             style={{
               alignSelf: "flex-start",
